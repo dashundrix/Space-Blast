@@ -65,5 +65,5 @@ ASTEROID_IMAGE = pygame.transform.scale(ASTEROID_IMAGE, (ASTEROID_WIDTH, ASTEROI
 BULLET_WIDTH, BULLET_HEIGHT = 10, 15
 BULLET_SPEED = 10
 BULLET_INTERVAL = 100  # 300 milliseconds cooldown for both player and enemies
-ENEMY_BULLET_SPEED = 10  # Enemy bullet speed
-ENEMY_BULLET_INTERVAL = 180  # Time interval between enemy shots in milliseconds
+ENEMY_BULLET_SPEED = 7  # Enemy bullet speed
+ENEMY_BULLET_INTERVAL = 300  # Time interval between enemy shots in milliseconds

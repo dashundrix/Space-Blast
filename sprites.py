@@ -15,7 +15,7 @@ class Player:
         self.frame_counter = 0
         self.image = self.frames[self.frame_index]
 
-        self.lives = 20  # Starting lives
+        self.lives = 12  # Starting lives
 
     def move(self, keys):
         moving = False
@@ -114,6 +114,7 @@ class Enemy:
         """Reduce the enemy's life when hit by a bullet."""
         self.lives -= 1
         if self.lives <= 0:
+            
             return True  # Enemy should be destroyed
         return False
 
