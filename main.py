@@ -8,11 +8,14 @@ from screens import *
 
 
 # Drawing Function
-def draw(WIN, BG, player, enemies, bullets, enemy_bullets, asteroids, explosions, bg_y, score,enemylevel):
+def draw(WIN, CURRENT_BG, player, enemies, bullets, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel):
+    # Clear the screen first
+    WIN.fill((0, 0, 0))
+    
     # Draw the first background
-    WIN.blit(BG, (0, bg_y))  
+    WIN.blit(settings.CURRENT_BG, (0, bg_y))  
     # Draw the second background just below the first one
-    WIN.blit(BG, (0, bg_y - HEIGHT))  
+    WIN.blit(settings.CURRENT_BG, (0, bg_y - HEIGHT))   
 
     # Check if the background has scrolled off screen, and reset it
     if bg_y >= HEIGHT:
@@ -55,30 +58,24 @@ def draw(WIN, BG, player, enemies, bullets, enemy_bullets, asteroids, explosions
     health_color = (0, 255, 0) if health_percentage > 0.3 else (255, 0, 0)
     pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height))
 
-    score_text = pygame.font.SysFont('Arial', 24).render(f"Score: {score}", True, (255, 255, 255))
-    enemy_level = pygame.font.SysFont('Arial', 24).render(f"Enemy Level: {enemylevel}", True, (255, 255, 255))
-    WIN.blit(score_text, (10, 10))
-    WIN.blit(enemy_level, (10, 50))
+    score_text = pygame.font.SysFont('Arial', 50).render(f"Score {score}", True, (255, 255, 255))
+    current_level = pygame.font.SysFont('Arial', 24).render(f"Level {gamelevel}", True, (255, 255, 255))
+   
+    WIN.blit(score_text, (10 , 10))
+    WIN.blit(current_level, (10, 50))
+   
     pygame.display.update()
     return bg_y  # Return the updated bg_y to continue scrolling
-
-# Game Over Display
-def display_game_over(WIN):
-    font = pygame.font.SysFont('Arial', 60)
-    game_over_text = font.render("GAME OVER", True, (255, 0, 0))
-    WIN.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height() // 2))
-    pygame.display.update()
-    pygame.time.delay(2000)
 
 # Main Game Loop
 def main():
     run = True
     clock = pygame.time.Clock()
-    
-    enemylevel = 1
+    global gamelevel
+    gamelevel = 1
     
     player = Player(500, 350)
-    enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(enemylevel)]
+    enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
     bullets = []
     enemy_bullets = []
     asteroids = []
@@ -103,7 +100,12 @@ def main():
                 if play_button.collidepoint(event.pos):  # Check if the play button was clicked
                     game_started = True  # Proceed to game loop after clicking play
                     game_paused = False  # Ensure it's not paused when game starts
-        
+                    settings.play_game_music()
+                
+
+               
+                
+       
         # Continuously update the background position to scroll it
         bg_y += 1  # Increase the vertical position for scrolling effect
         if bg_y >= HEIGHT:  # Reset background when it scrolls off the screen
@@ -120,13 +122,20 @@ def main():
     # Main game loop
     while run:
         clock.tick(60)
-        if score >= 200 * (enemylevel) and score != previous_score:
-            enemylevel += 1
+        if score >= 100 * (gamelevel) and score != previous_score:
+            gamelevel += 1
             previous_score = score  # Update the previous score to prevent continuous level increase
             map_speed += 1  # Increase map speed for the new level
-            
+
+             # Add background changing logic here
+            if gamelevel % 2 == 0:  # Even levels
+                settings.CURRENT_BG = settings.BG1
+                print("Changed to BG1")
+            else:  # Odd levels
+                settings.CURRENT_BG = settings.BG
+                print("Changed to BG")
             # Reset and update the enemies list for the new level
-            enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(enemylevel)]
+            enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
         
         
         # Pause handling (toggle pause on ESC press)
@@ -227,6 +236,7 @@ def main():
 
             if player.rect.colliderect(enemy_bullet.rect):
                 player.lose_life()
+                explosions.append(Explosion(player.rect.centerx - 10, player.rect.centery - 10))
                 enemy_bullets.remove(enemy_bullet)
 
         # Manage Explosions
@@ -238,7 +248,7 @@ def main():
         bg_y += map_speed 
         
 
-        bg_y = draw(WIN, BG, player, enemies, bullets, enemy_bullets, asteroids, explosions, bg_y, score, enemylevel)
+        bg_y = draw(WIN, settings.CURRENT_BG, player, enemies, bullets, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel)
 
     pygame.quit()
 

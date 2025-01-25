@@ -3,9 +3,15 @@ from settings import *
 # Function to display the title screen
 def display_title_screen(WIN, BG, bg_y):
     # Create font and title text
-    font = pygame.font.SysFont('Arial', 60)
+    font = pygame.font.SysFont('ADLaM Display', 60)
     title_text = font.render("SPACE BLAST", True, (255, 255, 255))
-    play_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2, 200, 50)
+
+    PLAY_BUTTON_WIDTH = 200
+    PLAY_BUTTON_HEIGHT = 80
+    PLAY_BUTTON_IMAGE = pygame.image.load("assets/Start_Button.png")
+    PLAY_BUTTON_IMAGE = pygame.transform.scale(PLAY_BUTTON_IMAGE, (PLAY_BUTTON_WIDTH, PLAY_BUTTON_HEIGHT))
+    
+    play_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 - 60, PLAY_BUTTON_WIDTH, PLAY_BUTTON_HEIGHT)
     
     # Scroll the background just like the game
     WIN.fill((0, 0, 0))  # Black background
@@ -21,10 +27,9 @@ def display_title_screen(WIN, BG, bg_y):
 
     WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 4))
 
-    pygame.draw.rect(WIN, (0, 255, 0), play_button)  # Draw the "Play" button
-    play_text = pygame.font.SysFont('Arial', 30).render("Play", True, (0, 0, 0))
-    WIN.blit(play_text, (play_button.x + (play_button.width - play_text.get_width()) // 2, play_button.y + (play_button.height - play_text.get_height()) // 2))
+    WIN.blit(PLAY_BUTTON_IMAGE, (play_button.x, play_button.y))
 
+   
     pygame.display.update()
     
     return play_button, bg_y
@@ -60,3 +65,11 @@ def display_pause_screen(WIN):
     pygame.display.update()
 
     return continue_button, exit_button
+
+# Game Over Display
+def display_game_over(WIN):
+    font = pygame.font.SysFont('Arial', 60)
+    game_over_text = font.render("GAME OVER", True, (255, 0, 0))
+    WIN.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height() // 2))
+    pygame.display.update()
+    pygame.time.delay(2000)
