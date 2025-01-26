@@ -36,7 +36,7 @@ PLAYER_FRAME_COUNT = 12
 FRAME_WIDTH = PLAYER_IMAGE_SHEET.get_width() // PLAYER_FRAME_COUNT
 FRAME_HEIGHT = PLAYER_IMAGE_SHEET.get_height()
 
-PLAYERBULLET_WIDTH, PLAYERBULLET_HEIGHT = 25,30 
+PLAYERBULLET_WIDTH, PLAYERBULLET_HEIGHT = 50,60 
 
 PLAYERBULLET1_FRAME_COUNT = 4
 PLAYERBULLET1_FRAME_WIDTH = PLAYERBULLET1_IMAGE_SHEET.get_width() // PLAYERBULLET1_FRAME_COUNT
@@ -67,7 +67,7 @@ ENEMY_IMAGE = pygame.image.load("assets/enemy.png")
 ENEMY_IMAGE = pygame.transform.scale(ENEMY_IMAGE, (ENEMY_WIDTH, ENEMY_HEIGHT))
 ENEMYBULLET1_IMAGE_SHEET = pygame.image.load("assets/Enemy Bullet 1.png")
 
-ENEMYBULLET_WIDTH, ENEMYBULLET_HEIGHT = 25,30 
+ENEMYBULLET_WIDTH, ENEMYBULLET_HEIGHT = 50,60 
 
 ENEMYBULLET1_FRAME_COUNT = 4
 ENEMYBULLET1_FRAME_WIDTH = ENEMYBULLET1_IMAGE_SHEET.get_width() // ENEMYBULLET1_FRAME_COUNT
@@ -120,6 +120,7 @@ def get_random_asteroid_frames():
         asteroid_frames.append(frame)
 
     return asteroid_frames
+
 #Boss1
 BOSS_WIDTH, BOSS_HEIGHT = 256, 256
 BOSS_SPEED = 2
@@ -127,11 +128,27 @@ BOSS_SPEED = 2
 
 # Bullet Settings
 BULLET_WIDTH, BULLET_HEIGHT = 10, 15
-BULLET_SPEED = 7
-BULLET_INTERVAL = 200 # 300 milliseconds cooldown for both player and enemies
-ENEMY_BULLET_SPEED = 7  # Enemy bullet speed
-ENEMY_BULLET_INTERVAL = 300 # Time interval between enemy shots in milliseconds
+BULLET_SPEED = 10
+BULLET_INTERVAL = 100 # 300 milliseconds cooldown for both player and enemies
+ENEMY_BULLET_SPEED = 10  # Enemy bullet speed
+ENEMY_BULLET_INTERVAL = 500 # Time interval between enemy shots in milliseconds
 
+# Power-up Settings
+POWERUP_WIDTH, POWERUP_HEIGHT = 64, 64
+POWERUP_SPEED = 7
+POWERUP_INTERVAL = 1000  # 1000 milliseconds = 1 second
+POWERUPDUALGUN_IMAGE_SHEET = pygame.image.load("assets/Powerup1_Dualgun.png")
+
+POWERUP1_FRAME_COUNT = 20
+DUALFIRE_DURATION = 5000  
+
+POWERUPDUALGUN_FRAMES = []
+for i in range(POWERUP1_FRAME_COUNT):
+    frame = POWERUPDUALGUN_IMAGE_SHEET.subsurface(
+        pygame.Rect(i * POWERUP_WIDTH, 0, POWERUP_WIDTH, POWERUP_HEIGHT)
+    )
+    frame = pygame.transform.scale(frame, (POWERUP_WIDTH, POWERUP_HEIGHT))
+    POWERUPDUALGUN_FRAMES.append(frame)
 
 #BG/MENU SOUNDS
 def play_game_music():

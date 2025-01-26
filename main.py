@@ -8,13 +8,15 @@ from screens import *
 
 
 # Drawing Function
-def draw(WIN, CURRENT_BG, player, enemies, bullets, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel):
+def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgun,
+         enemy_bullets, asteroids, explosions, bg_y, score, gamelevel):
     # Clear the screen first
     WIN.fill((0, 0, 0))
     
     # Draw the first background
     WIN.blit(settings.CURRENT_BG, (0, bg_y))  
     # Draw the second background just below the first one
+    
     WIN.blit(settings.CURRENT_BG, (0, bg_y - HEIGHT))   
 
     # Check if the background has scrolled off screen, and reset it
@@ -32,6 +34,11 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, enemy_bullets, asteroids, ex
         asteroid.draw(WIN)
     for explosion in explosions:
         explosion.draw(WIN)
+
+    for dual_bullet in dual_bullets:
+        dual_bullet.draw(WIN)
+    for powerup1 in powerup_dualgun:
+        powerup1.draw(WIN)
 
     # Display Health Bar
     font = pygame.font.SysFont('Arial', 24)
@@ -62,7 +69,7 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, enemy_bullets, asteroids, ex
     current_level = pygame.font.SysFont('Arial', 24).render(f"Level {gamelevel}", True, (255, 255, 255))
    
     WIN.blit(score_text, (10 , 10))
-    WIN.blit(current_level, (10, 50))
+    WIN.blit(current_level, (10, 60))
    
     pygame.display.update()
     return bg_y  # Return the updated bg_y to continue scrolling
@@ -77,16 +84,29 @@ def main():
     player = Player(500, 350)
     enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
     bullets = []
+    dual_bullets = []
     enemy_bullets = []
     asteroids = []
     explosions = []
+    powerup_dualgun = []
+    
     previous_score = 0
     score = 0
+    
+    powerup1_interval = 50
     last_bullet_time = 0
+    last_dual_bullet_time = 0
+    last_powerup1_time = 0
+    
+    dualfire_end_time = 0
+
+    dualfire = False
+    singlefire = True
+    
     bg_y = 0  # Start the background position at the top
     game_paused = False
     map_speed = settings.BG_SCROLL_SPEED
-    
+   
     play_button, bg_y = display_title_screen(WIN, BG, bg_y)
     # Wait for player to click play button to start
     
@@ -101,9 +121,6 @@ def main():
                     game_started = True  # Proceed to game loop after clicking play
                     game_paused = False  # Ensure it's not paused when game starts
                     settings.play_game_music()
-                
-
-               
                 
        
         # Continuously update the background position to scroll it
@@ -122,13 +139,14 @@ def main():
     # Main game loop
     while run:
         clock.tick(60)
+
         if score >= 100 * (gamelevel) and score != previous_score:
             gamelevel += 1
             previous_score = score  # Update the previous score to prevent continuous level increase
             map_speed += 1  # Increase map speed for the new level
 
              # Add background changing logic here
-            if gamelevel % 2 == 0:  # Even levels
+            if gamelevel % 4 == 0:  # Even levels
                 settings.CURRENT_BG = settings.BG1
                 print("Changed to BG1")
             else:  # Odd levels
@@ -179,41 +197,103 @@ def main():
         keys = pygame.key.get_pressed()
         player.move(keys)
 
+        
         # Automatically shoot continuously at regular intervals
         current_time = pygame.time.get_ticks()
+        
+        # Spawn power-ups at random intervals
+        if current_time - last_powerup1_time > powerup1_interval:
+            powerup_x = random.randint(0, WIDTH - POWERUP_WIDTH)
+            powerup_y = random.randint(-100, -50)  # Start above the screen
+            powerup_dualgun.append(PowerUpDualGun(powerup_x, powerup_y))
+            last_powerup1_time = current_time
+            powerup1_interval = random.randint(3000, 8000)  # Randomize next spawn interval
 
-        if current_time - last_bullet_time > BULLET_INTERVAL:
-            bullets.append(Bullet(player.rect.x, player.rect.y))  # Fire bullet
-            last_bullet_time = current_time  # Update the last bullet shot time
-            shoot_sound_player.play()  # Play shoot sound
+        # Update and handle power-up behavior
+        for powerup1 in powerup_dualgun[:]:
+            powerup1.move()
+            if powerup1.rect.colliderect(player.rect):  # Player collects power-up
+                dualfire = True
+                singlefire = False
+                dualfire_end_time = current_time + DUALFIRE_DURATION  # Set duration
+                powerup_dualgun.remove(powerup1)
+            elif powerup1.rect.y > HEIGHT:  # Remove off-screen power-ups
+                powerup_dualgun.remove(powerup1)
 
-        # Move Bullets
+        # Check if dualfire duration has ended
+        if dualfire and current_time > dualfire_end_time:
+            dualfire = False
+            singlefire = True
+    
+       
+        if singlefire == True : # Single Bullet Firing
+            if current_time - last_bullet_time > BULLET_INTERVAL:
+                bullets.append(Bullet(player.rect.x, player.rect.y))
+                last_bullet_time = current_time
+                shoot_sound_player.play()
+
+        if dualfire == True : # Dual Bullet Firing (testing mode — always enabled)
+            if current_time - last_dual_bullet_time > BULLET_INTERVAL:  # Use a separate timer for dual bullets
+                dual_bullets.append(BulletDual(player.rect.x, player.rect.y))
+                last_dual_bullet_time = current_time
+                shoot_sound_player.play()
+
+        # Move and draw regular bullets
         for bullet in bullets[:]:
             bullet.move()
             if bullet.rect.y < 0:
                 bullets.remove(bullet)
+            bullet.draw(WIN)
+
+        # Move and draw dual bullets
+        for dual_bullet in dual_bullets[:]:
+            dual_bullet.move()
+            if dual_bullet.rect_left.y < 0 and dual_bullet.rect_right.y < 0:  # Remove if both are off-screen
+                dual_bullets.remove(dual_bullet)
+            dual_bullet.draw(WIN)
 
         # Move Enemies
         for enemy in enemies[:]:
             enemy.move(player)
+            enemy_removed = False  # Flag to track if the enemy is already removed
+
+            # Check collision with regular bullets
             for bullet in bullets[:]:
                 if enemy.rect.colliderect(bullet.rect):
                     enemy.take_damage()  # Decrease the enemy's health by 1
-
-                    # Create explosion only when the enemy dies
                     if enemy.take_damage():
                         explosions.append(Explosion(enemy.rect.centerx - 10, enemy.rect.centery - 10))
-                        enemies.remove(enemy)
+                        enemies.remove(enemy)  # Remove the enemy
                         enemies.append(Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100))
                         score += 10  # Increase score when an enemy is killed
+                        enemy_removed = True  # Mark enemy as removed
                     bullets.remove(bullet)  # Remove the bullet after collision
-                    break
+                    break  # Exit bullet loop if collision occurs
 
+            if enemy_removed:
+                continue  # Skip checking dual bullets if the enemy is already removed
+
+            # Check collision with dual bullets
+            for dual_bullet in dual_bullets[:]:
+                if enemy.rect.colliderect(dual_bullet.rect_left) or enemy.rect.colliderect(dual_bullet.rect_right):
+                    enemy.take_damage()  # Decrease the enemy's health by 1
+                    if enemy.take_damage():
+                        explosions.append(Explosion(enemy.rect.centerx - 10, enemy.rect.centery - 10))
+                        enemies.remove(enemy)  # Remove the enemy
+                        enemies.append(Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100))
+                        score += 10  # Increase score when an enemy is killed
+                        enemy_removed = True  # Mark enemy as removed
+                    dual_bullets.remove(dual_bullet)  # Remove the dual bullet after collision
+                    break  # Exit dual bullet loop if collision occurs
+
+            if enemy_removed:
+                continue  # Skip processing this enemy further
+
+            # Enemy shooting logic
             enemy_bullet = enemy.shoot(current_time)
             if enemy_bullet:
                 enemy_bullets.append(enemy_bullet)
                 shoot_sound_enemy.play()
-
         # Move Asteroids
         if random.randint(1, 100) <= 1:
             asteroids.append(Asteroid(random.randint(0, WIDTH - ASTEROID_WIDTH), -ASTEROID_HEIGHT))
@@ -248,7 +328,8 @@ def main():
         bg_y += map_speed 
         
 
-        bg_y = draw(WIN, settings.CURRENT_BG, player, enemies, bullets, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel)
+        bg_y = draw(WIN, settings.CURRENT_BG, player, enemies, bullets, dual_bullets, 
+                    powerup_dualgun, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel)
 
     pygame.quit()
 

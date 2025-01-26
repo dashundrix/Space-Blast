@@ -56,7 +56,7 @@ class Player:
 # Bullet Classes Player
 class Bullet:
     def __init__(self, x, y):
-        self.rect = pygame.Rect(x + PLAYER_WIDTH // 2 - BULLET_WIDTH , y, BULLET_WIDTH, BULLET_HEIGHT)
+        self.rect = pygame.Rect(x + PLAYER_WIDTH // 2 - BULLET_WIDTH - 13 , y - PLAYERBULLET_HEIGHT + 13 , BULLET_WIDTH, BULLET_HEIGHT)
         self.frames = PLAYERBULLET1_FRAMES
         self.frame_index = 0
         self.animation_speed = 1
@@ -79,6 +79,29 @@ class Bullet:
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))
 
+class BulletDual:
+    def __init__(self, x, y):
+        self.rect_left = pygame.Rect(x , y + PLAYERBULLET_HEIGHT // 2 - 20, BULLET_WIDTH, BULLET_HEIGHT)  # Left bullet
+        self.rect_right = pygame.Rect(x + PLAYER_WIDTH // 2 + 14  , y + PLAYERBULLET_HEIGHT // 2 - 20, BULLET_WIDTH, BULLET_HEIGHT)  # Right bullet
+        self.frames = PLAYERBULLET1_FRAMES
+        self.frame_index = 0
+        self.animation_speed = 1
+        self.frame_counter = 0
+        self.image = self.frames[self.frame_index]
+
+    def move(self):
+        self.rect_left.y -= BULLET_SPEED
+        self.rect_right.y -= BULLET_SPEED
+        self.frame_counter += 1
+        if self.frame_counter >= self.animation_speed:
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+            self.frame_counter = 0
+
+        self.image = self.frames[self.frame_index]
+
+    def draw(self, WIN):
+        WIN.blit(self.image, (self.rect_left.x, self.rect_left.y))  # Draw left bullet
+        WIN.blit(self.image, (self.rect_right.x, self.rect_right.y))  # Draw right bullet
 
 # Enemy Class
 class Enemy:
@@ -91,7 +114,7 @@ class Enemy:
         self.random_offset_x = random.randint(10, 30)
         self.sway_direction = 1  # Start swaying to the right
         self.sway_distance = 0
-        self.max_sway_distance = 50  # Maximum sway in pixels
+        self.max_sway_distance = 60  # Maximum sway in pixels
 
     def move(self, player):
         if self.rect.x < player.rect.x - self.random_offset_x:
@@ -197,3 +220,25 @@ class Explosion:
         if self.current_frame < len(EXPLOSION_FRAMES):  # Ensure within bounds
             frame_image = EXPLOSION_FRAMES[self.current_frame]
             surface.blit(frame_image, (self.x, self.y))
+
+class PowerUpDualGun:
+    def __init__(self, x, y, power_type = 'dual_gun'):
+        self.rect = pygame.Rect(x, y, POWERUP_WIDTH, POWERUP_HEIGHT)
+        self.power_type = power_type
+        self.frames = POWERUPDUALGUN_FRAMES
+        self.frame_index = 0
+        self.animation_speed = 3
+        self.frame_counter = 0
+        self.image = self.frames[self.frame_index]
+    
+    def move(self):
+        self.rect.y += POWERUP_SPEED
+        self.frame_counter += 1
+        if self.frame_counter >= self.animation_speed:
+            self.frame_index = (self.frame_index + 1) % len(self.frames)  # Wrap around the index
+            self.frame_counter = 0
+
+        self.image = self.frames[self.frame_index]
+
+    def draw(self, WIN):
+        WIN.blit(self.image, (self.rect.x, self.rect.y))
