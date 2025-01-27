@@ -28,13 +28,53 @@ normal_bg = pygame.mixer.Sound("assets/normal bgm.mp3")  # Ensure this path is c
 # Player Settings
 PLAYER_WIDTH, PLAYER_HEIGHT = 128, 128
 PLAYER_SPEED = 7
-PLAYER_IMAGE_SHEET = pygame.image.load("assets/SPACESHIP 1.png")
+
+
+PLAYER_SPRITE_SHEETS = {
+    "idle": "assets/SPACESHIP 1.png",
+    "up": "assets/SPACESHIP1_UP.png",
+    "right": "assets/SPACESHIP1_RIGHT.png",
+    "left": "assets/SPACESHIP1_LEFT.png",
+    "down": "assets/SPACESHIP 1.png",
+    "up-left": "assets/SPACESHIP1_LEFT.png",  # Add diagonal frames for up-left
+    "up-right": "assets/SPACESHIP1_RIGHT.png",  # Add diagonal frames for up-right
+    "down-left": "assets/SPACESHIP1_LEFT.png",  # Add diagonal frames for down-left
+    "down-right": "assets/SPACESHIP1_RIGHT.png",  # Add diagonal frames for down-right
+}
+
+
 PLAYERBULLET1_IMAGE_SHEET = pygame.image.load("assets/Bullet 1.png")
 
 
-PLAYER_FRAME_COUNT = 12
-FRAME_WIDTH = PLAYER_IMAGE_SHEET.get_width() // PLAYER_FRAME_COUNT
-FRAME_HEIGHT = PLAYER_IMAGE_SHEET.get_height()
+# Frame counts for each sprite sheet
+PLAYER_FRAME_COUNT = {
+    "idle": 12,
+    "up": 6,
+    "right": 6,
+    "left": 6,
+    "down": 12,
+    "up-left": 6,  # Set appropriate frame count for diagonal directions
+    "up-right": 6,
+    "down-left": 6,
+    "down-right": 6,
+}
+
+# Load and process frames for each direction
+PLAYER_FRAMES = {}
+for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS.items():
+    sprite_sheet = pygame.image.load(sprite_sheet_path)
+    frame_count = PLAYER_FRAME_COUNT[direction]
+    frame_width = sprite_sheet.get_width() // frame_count
+    frame_height = sprite_sheet.get_height()
+
+    # Extract and scale frames
+    PLAYER_FRAMES[direction] = [
+        pygame.transform.scale(
+            sprite_sheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height)),
+            (PLAYER_WIDTH, PLAYER_HEIGHT),
+        )
+        for i in range(frame_count)
+    ]
 
 PLAYERBULLET_WIDTH, PLAYERBULLET_HEIGHT = 50,60 
 
@@ -43,14 +83,6 @@ PLAYERBULLET1_FRAME_WIDTH = PLAYERBULLET1_IMAGE_SHEET.get_width() // PLAYERBULLE
 PLAYERBULLET1_FRAME_HEIGHT = PLAYERBULLET1_IMAGE_SHEET.get_height()
 
 
-PLAYER_FRAMES = []
-for i in range (PLAYER_FRAME_COUNT):
-    frame = PLAYER_IMAGE_SHEET.subsurface(
-        pygame.Rect(i * FRAME_WIDTH, 0, FRAME_WIDTH, FRAME_HEIGHT)
-    )
-
-    frame = pygame.transform.scale(frame, (PLAYER_WIDTH, PLAYER_HEIGHT))
-    PLAYER_FRAMES.append(frame)
 
 PLAYERBULLET1_FRAMES = []
 for i in range(PLAYERBULLET1_FRAME_COUNT):  # Ensure PLAYERBULLET1_FRAME_COUNT is defined
@@ -129,9 +161,9 @@ BOSS_SPEED = 2
 # Bullet Settings
 BULLET_WIDTH, BULLET_HEIGHT = 10, 15
 BULLET_SPEED = 10
-BULLET_INTERVAL = 100 # 300 milliseconds cooldown for both player and enemies
+BULLET_INTERVAL = 200 # 300 milliseconds cooldown for both player and enemies
 ENEMY_BULLET_SPEED = 10  # Enemy bullet speed
-ENEMY_BULLET_INTERVAL = 500 # Time interval between enemy shots in milliseconds
+ENEMY_BULLET_INTERVAL = 600 # Time interval between enemy shots in milliseconds
 
 # Power-up Settings
 POWERUP_WIDTH, POWERUP_HEIGHT = 64, 64
@@ -140,7 +172,7 @@ POWERUP_INTERVAL = 1000  # 1000 milliseconds = 1 second
 POWERUPDUALGUN_IMAGE_SHEET = pygame.image.load("assets/Powerup1_Dualgun.png")
 
 POWERUP1_FRAME_COUNT = 20
-DUALFIRE_DURATION = 5000  
+DUALFIRE_DURATION = 10000  
 
 POWERUPDUALGUN_FRAMES = []
 for i in range(POWERUP1_FRAME_COUNT):

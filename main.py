@@ -215,6 +215,7 @@ def main():
             if powerup1.rect.colliderect(player.rect):  # Player collects power-up
                 dualfire = True
                 singlefire = False
+                
                 dualfire_end_time = current_time + DUALFIRE_DURATION  # Set duration
                 powerup_dualgun.remove(powerup1)
             elif powerup1.rect.y > HEIGHT:  # Remove off-screen power-ups

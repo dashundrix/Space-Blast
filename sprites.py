@@ -9,41 +9,69 @@ from main import *
 class Player:
     def __init__(self, x, y):
         self.rect = pygame.Rect(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)
-        self.frames = PLAYER_FRAMES
+        self.frames = PLAYER_FRAMES  # Frames organized by direction
+        self.direction = "idle"  # Default direction
         self.frame_index = 0
         self.animation_speed = 4
         self.frame_counter = 0
-        self.image = self.frames[self.frame_index]
-        
+        self.image = self.frames[self.direction][self.frame_index]
+
         self.lives = 10  # Starting lives
 
     def move(self, keys):
         moving = False
-      
+
+        # Reset direction to idle by default
+        self.direction = "idle"
+
+        # Horizontal movement (left and right)
         if keys[pygame.K_a] and self.rect.x - PLAYER_SPEED >= 0:
             self.rect.x -= PLAYER_SPEED
+            self.direction = "left"
             moving = True
-        if keys[pygame.K_d] and self.rect.x + PLAYER_SPEED + self.rect.width <= WIDTH:
+        elif keys[pygame.K_d] and self.rect.x + PLAYER_SPEED + self.rect.width <= WIDTH:
             self.rect.x += PLAYER_SPEED
+            self.direction = "right"
             moving = True
+
+        # Vertical movement (up and down)
         if keys[pygame.K_w] and self.rect.y - PLAYER_SPEED >= 0:
             self.rect.y -= PLAYER_SPEED
             moving = True
-        if keys[pygame.K_s] and self.rect.y + PLAYER_SPEED + self.rect.height <= HEIGHT:
+            if self.direction == "left":
+                self.direction = "up-left"  # Diagonal direction
+            elif self.direction == "right":
+                self.direction = "up-right"  # Diagonal direction
+            else:
+                self.direction = "up"  # Vertical movement only
+
+        elif keys[pygame.K_s] and self.rect.y + PLAYER_SPEED + self.rect.height <= HEIGHT:
             self.rect.y += PLAYER_SPEED
             moving = True
+            if self.direction == "left":
+                self.direction = "down-left"  # Diagonal direction
+            elif self.direction == "right":
+                self.direction = "down-right"  # Diagonal direction
+            else:
+                self.direction = "down"  # Vertical movement only
 
-        # Idle Animation Logic
-        if not moving:  # If no movement, cycle through idle frames
-            self.frame_counter += 1
-            if self.frame_counter >= self.animation_speed:
-                self.frame_index = (self.frame_index + 1) % len(self.frames)
-                self.frame_counter = 0
-       #else:
-            #elf.frame_index = 0  # Reset to frame 0 when moving
+        # If no movement detected, set direction to idle
+        if not moving:
+            self.direction = "idle"
 
-        # Update Current Frame
-        self.image = self.frames[self.frame_index]
+        # Debug: Check direction
+        #print(f"Current direction: {self.direction}")
+
+        # Update animation frames
+        self.frame_counter += 1
+        if self.frame_counter >= self.animation_speed:
+            max_frames = len(self.frames[self.direction])
+            self.frame_index = (self.frame_index + 1) % max_frames
+            self.frame_counter = 0
+
+        # Update current frame with bounds check
+        self.frame_index = min(self.frame_index, len(self.frames[self.direction]) - 1)
+        self.image = self.frames[self.direction][self.frame_index]
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))
 
