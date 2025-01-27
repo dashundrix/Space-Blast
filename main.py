@@ -93,7 +93,7 @@ def main():
     previous_score = 0
     score = 0
     
-    powerup1_interval = 50
+    powerup1_interval = 1000
     last_bullet_time = 0
     last_dual_bullet_time = 0
     last_powerup1_time = 0
@@ -207,7 +207,7 @@ def main():
             powerup_y = random.randint(-100, -50)  # Start above the screen
             powerup_dualgun.append(PowerUpDualGun(powerup_x, powerup_y))
             last_powerup1_time = current_time
-            powerup1_interval = random.randint(3000, 8000)  # Randomize next spawn interval
+            powerup1_interval = random.randint(5000, 10000)  # Randomize next spawn interval
 
         # Update and handle power-up behavior
         for powerup1 in powerup_dualgun[:]:

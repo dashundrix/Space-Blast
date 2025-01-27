@@ -36,10 +36,10 @@ PLAYER_SPRITE_SHEETS = {
     "right": "assets/SPACESHIP1_RIGHT.png",
     "left": "assets/SPACESHIP1_LEFT.png",
     "down": "assets/SPACESHIP 1.png",
-    "up-left": "assets/SPACESHIP1_LEFT.png",  # Add diagonal frames for up-left
-    "up-right": "assets/SPACESHIP1_RIGHT.png",  # Add diagonal frames for up-right
-    "down-left": "assets/SPACESHIP1_LEFT.png",  # Add diagonal frames for down-left
-    "down-right": "assets/SPACESHIP1_RIGHT.png",  # Add diagonal frames for down-right
+    "up-left": "assets/SPACESHIP1_LEFT.png",  
+    "up-right": "assets/SPACESHIP1_RIGHT.png",  
+    "down-left": "assets/SPACESHIP1_LEFT.png",  
+    "down-right": "assets/SPACESHIP1_RIGHT.png",  
 }
 
 
@@ -168,7 +168,8 @@ ENEMY_BULLET_INTERVAL = 600 # Time interval between enemy shots in milliseconds
 # Power-up Settings
 POWERUP_WIDTH, POWERUP_HEIGHT = 64, 64
 POWERUP_SPEED = 7
-POWERUP_INTERVAL = 1000  # 1000 milliseconds = 1 second
+
+
 POWERUPDUALGUN_IMAGE_SHEET = pygame.image.load("assets/Powerup1_Dualgun.png")
 
 POWERUP1_FRAME_COUNT = 20
