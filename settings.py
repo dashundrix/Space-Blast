@@ -16,6 +16,12 @@ CURRENT_BG = BG # Changing the map
 BG_SCROLL_SPEED = 3  # Adjust this value to control the scrolling speed
 bg_y = 0  # This will track the y position of the background
 
+#BG/MENU SOUNDS
+def play_game_music():
+    pygame.mixer.music.load('assets/normal bgm.mp3')  # Replace with your game music file
+    pygame.mixer.music.set_volume(1)  # Set the volume (optional)
+    pygame.mixer.music.play(-1)  # Play the music in a loop
+
 
 
 # Load sound
@@ -27,7 +33,7 @@ normal_bg = pygame.mixer.Sound("assets/normal bgm.mp3")  # Ensure this path is c
 
 # Player Settings
 PLAYER_WIDTH, PLAYER_HEIGHT = 128, 128
-PLAYER_SPEED = 7
+PLAYER_SPEED = 10
 
 
 PLAYER_SPRITE_SHEETS = {
@@ -42,9 +48,7 @@ PLAYER_SPRITE_SHEETS = {
     "down-right": "assets/SPACESHIP1_RIGHT.png",  
 }
 
-
 PLAYERBULLET1_IMAGE_SHEET = pygame.image.load("assets/Bullet 1.png")
-
 
 # Frame counts for each sprite sheet
 PLAYER_FRAME_COUNT = {
@@ -53,13 +57,12 @@ PLAYER_FRAME_COUNT = {
     "right": 6,
     "left": 6,
     "down": 12,
-    "up-left": 6,  # Set appropriate frame count for diagonal directions
+    "up-left": 6, 
     "up-right": 6,
     "down-left": 6,
     "down-right": 6,
 }
 
-# Load and process frames for each direction
 PLAYER_FRAMES = {}
 for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS.items():
     sprite_sheet = pygame.image.load(sprite_sheet_path)
@@ -183,8 +186,3 @@ for i in range(POWERUP1_FRAME_COUNT):
     frame = pygame.transform.scale(frame, (POWERUP_WIDTH, POWERUP_HEIGHT))
     POWERUPDUALGUN_FRAMES.append(frame)
 
-#BG/MENU SOUNDS
-def play_game_music():
-    pygame.mixer.music.load('assets/normal bgm.mp3')  # Replace with your game music file
-    pygame.mixer.music.set_volume(1)  # Set the volume (optional)
-    pygame.mixer.music.play(-1)  # Play the music in a loop

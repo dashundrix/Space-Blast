@@ -93,7 +93,7 @@ def main():
     previous_score = 0
     score = 0
     
-    powerup1_interval = 1000
+    powerup1_interval = 3000
     last_bullet_time = 0
     last_dual_bullet_time = 0
     last_powerup1_time = 0
@@ -143,9 +143,11 @@ def main():
         if score >= 100 * (gamelevel) and score != previous_score:
             gamelevel += 1
             previous_score = score  # Update the previous score to prevent continuous level increase
-            map_speed += 1  # Increase map speed for the new level
+            map_speed += 1.5  # Increase map speed for the new level
 
-             # Add background changing logic here
+            
+            # ///// BACKGROUND CHANGE ///// AnyLogic can apply 
+            # Add background changing logic here
             if gamelevel % 4 == 0:  # Even levels
                 settings.CURRENT_BG = settings.BG1
                 print("Changed to BG1")
@@ -207,7 +209,7 @@ def main():
             powerup_y = random.randint(-100, -50)  # Start above the screen
             powerup_dualgun.append(PowerUpDualGun(powerup_x, powerup_y))
             last_powerup1_time = current_time
-            powerup1_interval = random.randint(5000, 10000)  # Randomize next spawn interval
+            powerup1_interval = random.randint(7000, 13000)  # Randomize next spawn interval
 
         # Update and handle power-up behavior
         for powerup1 in powerup_dualgun[:]:
