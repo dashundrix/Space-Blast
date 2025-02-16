@@ -65,10 +65,10 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
     health_color = (0, 255, 0) if health_percentage > 0.3 else (255, 0, 0)
     pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height))
 
-    score_text = pygame.font.SysFont('Arial', 50).render(f"Score {score}", True, (255, 255, 255))
+    score_text = pygame.font.SysFont('Arial', 50).render(f"{score}", True, (255, 255, 255))
     current_level = pygame.font.SysFont('Arial', 24).render(f"Level {gamelevel}", True, (255, 255, 255))
    
-    WIN.blit(score_text, (10 , 10))
+    WIN.blit(score_text, (WIDTH //2 , 10))
     WIN.blit(current_level, (10, 60))
    
     pygame.display.update()
@@ -97,6 +97,7 @@ def main():
     last_bullet_time = 0
     last_dual_bullet_time = 0
     last_powerup1_time = 0
+    current_bullet_interval = settings.BULLET_INTERVAL
     
     dualfire_end_time = 0
 
@@ -107,7 +108,7 @@ def main():
     game_paused = False
     map_speed = settings.BG_SCROLL_SPEED
    
-    play_button, bg_y = display_title_screen(WIN, BG, bg_y)
+    play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y)
     # Wait for player to click play button to start
     
     game_started = False
@@ -121,6 +122,12 @@ def main():
                     game_started = True  # Proceed to game loop after clicking play
                     game_paused = False  # Ensure it's not paused when game starts
                     settings.play_game_music()
+                elif difficulty_button.collidepoint(event.pos):
+                    # Add difficulty selection logic here
+                    pass
+                elif exit_button.collidepoint(event.pos):
+                    run = False
+                    game_started = True
                 
        
         # Continuously update the background position to scroll it
@@ -128,7 +135,7 @@ def main():
         if bg_y >= HEIGHT:  # Reset background when it scrolls off the screen
             bg_y = 0
         # Redraw the title screen with updated background position
-        play_button, bg_y = display_title_screen(WIN, BG, bg_y)
+        play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y)
 
         # Refresh the screen after drawing the title screen with updated bg_y
         pygame.display.update()
@@ -215,14 +222,25 @@ def main():
         for powerup1 in powerup_dualgun[:]:
             powerup1.move()
             if powerup1.rect.colliderect(player.rect):  # Player collects power-up
-                dualfire = True
-                singlefire = False
+                random_effect = random.randint(1, 3)
+                
+                if random_effect == 1:
+                    dualfire = True
+                    singlefire = False
+                elif random_effect == 2:
+                    dualfire = True
+                    singlefire = True
+                elif random_effect == 3:
+                    settings.BULLET_INTERVAL = 100
+                    print(f"New BULLET_INTERVAL: {settings.BULLET_INTERVAL}")
+                    
+                   
+               
                 
                 dualfire_end_time = current_time + DUALFIRE_DURATION  # Set duration
                 powerup_dualgun.remove(powerup1)
             elif powerup1.rect.y > HEIGHT:  # Remove off-screen power-ups
                 powerup_dualgun.remove(powerup1)
-
         # Check if dualfire duration has ended
         if dualfire and current_time > dualfire_end_time:
             dualfire = False
@@ -230,13 +248,13 @@ def main():
     
        
         if singlefire == True : # Single Bullet Firing
-            if current_time - last_bullet_time > BULLET_INTERVAL:
+            if current_time - last_bullet_time > current_bullet_interval:
                 bullets.append(Bullet(player.rect.x, player.rect.y))
                 last_bullet_time = current_time
                 shoot_sound_player.play()
 
         if dualfire == True : # Dual Bullet Firing (testing mode — always enabled)
-            if current_time - last_dual_bullet_time > BULLET_INTERVAL:  # Use a separate timer for dual bullets
+            if current_time - last_dual_bullet_time > current_bullet_interval:  # Use a separate timer for dual bullets
                 dual_bullets.append(BulletDual(player.rect.x, player.rect.y))
                 last_dual_bullet_time = current_time
                 shoot_sound_player.play()

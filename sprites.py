@@ -111,13 +111,23 @@ class BulletDual:
     def __init__(self, x, y):
         self.rect_left = pygame.Rect(x , y + PLAYERBULLET_HEIGHT // 2 - 20, BULLET_WIDTH, BULLET_HEIGHT)  # Left bullet
         self.rect_right = pygame.Rect(x + PLAYER_WIDTH // 2 + 14  , y + PLAYERBULLET_HEIGHT // 2 - 20, BULLET_WIDTH, BULLET_HEIGHT)  # Right bullet
-        self.frames = PLAYERBULLET1_FRAMES
+        self.frames = PLAYERBULLET2_FRAMES
         self.frame_index = 0
         self.animation_speed = 1
         self.frame_counter = 0
         self.image = self.frames[self.frame_index]
+        self.initial_y = y
+        self.spread_factor = 0.01  # Adjust this value to control spread amount
+
+   
 
     def move(self):
+        distance_traveled = self.initial_y - self.rect_left.y
+        spread_amount = distance_traveled * self.spread_factor
+        
+        self.rect_left.x -= spread_amount
+        self.rect_right.x += spread_amount
+        
         self.rect_left.y -= BULLET_SPEED
         self.rect_right.y -= BULLET_SPEED
         self.frame_counter += 1
@@ -125,7 +135,7 @@ class BulletDual:
             self.frame_index = (self.frame_index + 1) % len(self.frames)
             self.frame_counter = 0
 
-        self.image = self.frames[self.frame_index]
+            self.image = self.frames[self.frame_index]
 
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect_left.x, self.rect_left.y))  # Draw left bullet
