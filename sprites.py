@@ -123,7 +123,7 @@ class BulletDual:
 
     def move(self):
         distance_traveled = self.initial_y - self.rect_left.y
-        spread_amount = distance_traveled * self.spread_factor
+        spread_amount = distance_traveled * self.spread_factor 
         
         self.rect_left.x -= spread_amount
         self.rect_right.x += spread_amount
@@ -190,6 +190,83 @@ class Enemy:
             return True  # Enemy should be destroyed
         return False
 
+class Boss1:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x, y, BOSS_WIDTH, BOSS_HEIGHT)
+        self.frames = BOSS1_FRAMES
+        self.frame_index = 0
+        self.animation_speed = 6
+        self.frame_counter = 0
+        self.image = self.frames[self.frame_index]
+        self.health = 100
+        self.movement_pattern = 0
+        self.shoot_timer = 0
+        self.shoot_delay = 1000
+        self.phase = 1
+
+    def move(self):
+        # Phase 1: Side to side movement
+        if self.rect.y < 90:  # Move down until it reaches y = 100
+            self.rect.y += 2
+        
+        if self.phase == 1:
+            
+            if self.movement_pattern == 0:
+                self.rect.x += 3
+                
+                if self.rect.x > WIDTH - BOSS_WIDTH:
+                    self.movement_pattern = 1
+                if self.rect.y == - HEIGHT - BOSS_HEIGHT:
+                    self.rect.y += 2
+
+            else:
+                self.rect.x -= 3
+                if self.rect.x < 0:
+                    self.movement_pattern = 0
+
+        # Phase 2: Diagonal movement (activates at 50% health)
+        elif self.phase == 2:
+            if self.movement_pattern == 0:
+                self.rect.x += 4
+                self.rect.y += 2
+                if self.rect.x > WIDTH - BOSS_WIDTH or self.rect.y > HEIGHT//2:
+                    self.movement_pattern = 1
+            else:
+                self.rect.x -= 4
+                self.rect.y -= 2
+                if self.rect.x < 0 or self.rect.y < 0:
+                    self.movement_pattern = 0
+
+        # Update animation
+        self.frame_counter += 1
+        if self.frame_counter >= self.animation_speed:
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+            self.frame_counter = 0
+            self.image = self.frames[self.frame_index]
+
+    def shoot(self, current_time):
+        bullets = []
+        if current_time - self.shoot_timer > self.shoot_delay:
+            if self.phase == 1:
+                # Single spread shot
+                bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, -1))
+                bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, 0))
+                bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, 1))
+            elif self.phase == 2:
+                # Circle pattern
+                for angle in range(0, 360, 45):
+                    bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, angle))
+            self.shoot_timer = current_time
+        return bullets
+
+    def take_damage(self, damage):
+        self.health -= damage
+        if self.health <= 50 and self.phase == 1:
+            self.phase = 2
+            self.shoot_delay = 800  # Faster shooting in phase 2
+
+    def draw(self, WIN):
+        WIN.blit(self.image, (self.rect.x, self.rect.y))
 
 # Asteroid Class
 class Asteroid:
@@ -236,6 +313,30 @@ class EnemyBullet:
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))
 
+class BossBullet1:
+    def __init__(self, x, y, angle):
+        self.rect = pygame.Rect(x, y, BULLET_WIDTH, BULLET_HEIGHT)
+        self.frames = BOSS1_BULLET1_FRAMES
+        self.frame_index = 0
+        self.animation_speed = 1
+        self.frame_counter = 0
+        self.image = self.frames[self.frame_index]
+        self.angle = angle
+    
+    def move(self):
+        self.rect.y += BOSS_BULLET_SPEED
+        self.frame_counter += 1
+        if self.frame_counter >= self.animation_speed:
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+            self.frame_counter = 0
+
+        self.image = self.frames[self.frame_index]
+    
+    def draw(self, WIN):
+        WIN.blit(self.image, (self.rect.x, self.rect.y))
+
+
+
 class Explosion:
     def __init__(self, x, y, duration=300):  # Duration in milliseconds
         self.x = x
@@ -265,7 +366,7 @@ class PowerUpDualGun:
         self.power_type = power_type
         self.frames = POWERUPDUALGUN_FRAMES
         self.frame_index = 0
-        self.animation_speed = 3
+        self.animation_speed = 5
         self.frame_counter = 0
         self.image = self.frames[self.frame_index]
     

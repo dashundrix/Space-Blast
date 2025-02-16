@@ -2,12 +2,12 @@ from settings import *
 
 # Function to display the title screen
 def display_title_screen(WIN, BG, bg_y):
-    font = pygame.font.SysFont('ADLaM Display', 60)
+    font = pygame.font.SysFont('ADLaM Display', 120)
     title_text = font.render("SPACE BLAST", True, (255, 255, 255))
 
-    BUTTON_WIDTH = 200
-    BUTTON_HEIGHT = 80
-    BUTTON_SPACING = 5
+    BUTTON_WIDTH = 230
+    BUTTON_HEIGHT = 50
+    BUTTON_SPACING = 8
 
     # Load and scale ALL button images
     PLAY_BUTTON_IMAGE = pygame.image.load("assets/Start_Button.png")

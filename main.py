@@ -7,9 +7,10 @@ from sprites import *
 from screens import *
 
 
+
 # Drawing Function
 def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgun,
-         enemy_bullets, asteroids, explosions, bg_y, score, gamelevel):
+         enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss, boss1_spawned ):
     # Clear the screen first
     WIN.fill((0, 0, 0))
     
@@ -22,10 +23,15 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
     # Check if the background has scrolled off screen, and reset it
     if bg_y >= HEIGHT:
         bg_y = 0  # Reset the background position when it reaches the height of the screen
-
+    
     player.draw(WIN)
+    
+    if boss1_spawned and boss is not None:    
+        boss.draw(WIN)
+        
     for enemy in enemies:
         enemy.draw(WIN)
+       
     for bullet in bullets:
         bullet.draw(WIN)
     for enemy_bullet in enemy_bullets:
@@ -40,23 +46,20 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
     for powerup1 in powerup_dualgun:
         powerup1.draw(WIN)
 
+    #Powerrup Mana
+    mana_bar_width = 270
+    mana_bar_height = 10
+    mana_bar_x = 30
+    mana_bar_y = HEIGHT - 60
+
+    pygame.draw.rect(WIN, ("blue"), (mana_bar_x, mana_bar_y, mana_bar_width, mana_bar_height))
+    
     # Display Health Bar
-    font = pygame.font.SysFont('Arial', 24)
-    life_text = font.render("Life ", True, (255, 255, 255))
-    life_text_width = life_text.get_width()
-
-    # Position the "Life" text on the left
-    life_text_x =   WIDTH  - life_text_width - 220
-    WIN.blit(life_text, (life_text_x, 20))
-
-    # Position the health bar right next to the "Life" text
-    health_bar_x = life_text_x + life_text_width + 10   
-
-    health_bar_width = 200
-    health_bar_height = 20
-    health_bar_x = WIDTH - health_bar_width - 20
-    health_bar_y = 20
-
+    health_bar_width = 300
+    health_bar_height = 30
+    health_bar_x = 30
+    health_bar_y = HEIGHT - 100
+    
     pygame.draw.rect(WIN, (169, 169, 169), (health_bar_x, health_bar_y, health_bar_width, health_bar_height))
 
     health_percentage = player.lives / 10
@@ -66,10 +69,10 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
     pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height))
 
     score_text = pygame.font.SysFont('Arial', 50).render(f"{score}", True, (255, 255, 255))
-    current_level = pygame.font.SysFont('Arial', 24).render(f"Level {gamelevel}", True, (255, 255, 255))
+    #current_level = pygame.font.SysFont('Arial', 24).render(f"Level {gamelevel}", True, (255, 255, 255))
    
     WIN.blit(score_text, (WIDTH //2 , 10))
-    WIN.blit(current_level, (10, 60))
+    #WIN.blit(current_level, (10, 60))
    
     pygame.display.update()
     return bg_y  # Return the updated bg_y to continue scrolling
@@ -78,11 +81,13 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
 def main():
     run = True
     clock = pygame.time.Clock()
+   
     global gamelevel
     gamelevel = 1
     
     player = Player(500, 350)
-    enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
+    enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(1 + gamelevel // 2)]
+    boss = False
     bullets = []
     dual_bullets = []
     enemy_bullets = []
@@ -92,8 +97,9 @@ def main():
     
     previous_score = 0
     score = 0
-    
-    powerup1_interval = 3000
+    boss1_spawned = False
+
+    powerup1_interval = 5000
     last_bullet_time = 0
     last_dual_bullet_time = 0
     last_powerup1_time = 0
@@ -147,23 +153,35 @@ def main():
     while run:
         clock.tick(60)
 
-        if score >= 100 * (gamelevel) and score != previous_score:
+        
+        time = pygame.time.get_ticks() / 1000  # Get time in seconds
+       
+        
+        if score >= 300 * (gamelevel) and score != previous_score:
             gamelevel += 1
             previous_score = score  # Update the previous score to prevent continuous level increase
-            map_speed += 1.5  # Increase map speed for the new level
+            map_speed += 3  # Increase map speed for the new level
 
             
             # ///// BACKGROUND CHANGE ///// AnyLogic can apply 
             # Add background changing logic here
-            if gamelevel % 4 == 0:  # Even levels
-                settings.CURRENT_BG = settings.BG1
+            if True:  # Even levels
+                settings.CURRENT_BG = settings.BG
                 print("Changed to BG1")
             else:  # Odd levels
                 settings.CURRENT_BG = settings.BG
                 print("Changed to BG")
             # Reset and update the enemies list for the new level
             enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
-        
+
+        # Spawn the boss after 10 seconds
+        if time >= 20 and not boss1_spawned:
+            boss1_spawned = True
+            boss = Boss1(WIDTH // 2 - BOSS_WIDTH // 2, -300)  # Initialize the boss
+            print("Boss spawned!")  # Debugging: Confirm boss spawn
+
+        if boss1_spawned and boss is not None:
+            boss.move()  # Move the boss if it has been spawned
         
         # Pause handling (toggle pause on ESC press)
         keys = pygame.key.get_pressed()
@@ -217,26 +235,35 @@ def main():
             powerup_dualgun.append(PowerUpDualGun(powerup_x, powerup_y))
             last_powerup1_time = current_time
             powerup1_interval = random.randint(7000, 13000)  # Randomize next spawn interval
+                
+            # Check for collision between player and enemies
 
         # Update and handle power-up behavior
         for powerup1 in powerup_dualgun[:]:
             powerup1.move()
             if powerup1.rect.colliderect(player.rect):  # Player collects power-up
-                random_effect = random.randint(1, 3)
+                random_effect = random.randint(1, 4)
                 
                 if random_effect == 1:
                     dualfire = True
                     singlefire = False
+                    print("Dual Machingun")
                 elif random_effect == 2:
                     dualfire = True
                     singlefire = True
+                    print("Triple Machingun")
                 elif random_effect == 3:
-                    settings.BULLET_INTERVAL = 100
+                    current_bullet_interval = 130  # Set the current interval directly
+                    settings.BULLET_INTERVAL = 130  # Keep settings in sync
                     print(f"New BULLET_INTERVAL: {settings.BULLET_INTERVAL}")
+
+                elif random_effect == 4:
+                  player.lives += 2
+                  if player.lives > 10:
+                      player.lives = 10
+                print("HEALTH +")
+
                     
-                   
-               
-                
                 dualfire_end_time = current_time + DUALFIRE_DURATION  # Set duration
                 powerup_dualgun.remove(powerup1)
             elif powerup1.rect.y > HEIGHT:  # Remove off-screen power-ups
@@ -245,6 +272,8 @@ def main():
         if dualfire and current_time > dualfire_end_time:
             dualfire = False
             singlefire = True
+            current_bullet_interval = 200  # Set the current interval directly
+            settings.BULLET_INTERVAL = 200  # Keep settings in sync
     
        
         if singlefire == True : # Single Bullet Firing
@@ -291,6 +320,7 @@ def main():
                     bullets.remove(bullet)  # Remove the bullet after collision
                     break  # Exit bullet loop if collision occurs
 
+
             if enemy_removed:
                 continue  # Skip checking dual bullets if the enemy is already removed
 
@@ -315,6 +345,8 @@ def main():
             if enemy_bullet:
                 enemy_bullets.append(enemy_bullet)
                 shoot_sound_enemy.play()
+
+      
         # Move Asteroids
         if random.randint(1, 100) <= 1:
             asteroids.append(Asteroid(random.randint(0, WIDTH - ASTEROID_WIDTH), -ASTEROID_HEIGHT))
@@ -328,6 +360,7 @@ def main():
                 explosions.append(Explosion(player.rect.centerx - 10, player.rect.centery - 10))
                 asteroids.remove(asteroid)
                 player.lose_life()
+
 
         # Move Enemy Bullets
         for enemy_bullet in enemy_bullets[:]:
@@ -350,7 +383,7 @@ def main():
         
 
         bg_y = draw(WIN, settings.CURRENT_BG, player, enemies, bullets, dual_bullets, 
-                    powerup_dualgun, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel)
+                    powerup_dualgun, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss,  boss1_spawned)
 
     pygame.quit()
 
