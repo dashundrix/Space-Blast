@@ -8,12 +8,16 @@ WIDTH, HEIGHT = 1280, 680
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Space Shooters")
 
+cursor_img = pygame.image.load('assets/MOUSE_POINTER.png')
+cursor_img = pygame.transform.scale(cursor_img, (64, 64))
+
 BG = pygame.transform.scale(pygame.image.load("assets/Space Background.png"), (WIDTH, HEIGHT))
 BG1 = pygame.transform.scale(pygame.image.load("assets/Space Background1.png"), (WIDTH, HEIGHT))
+BG2 = pygame.transform.scale(pygame.image.load("assets/Space Background2.jpg"), (WIDTH, HEIGHT))
 
 CURRENT_BG = BG # Changing the map
 
-BG_SCROLL_SPEED = 3  # Adjust this value to control the scrolling speed
+BG_SCROLL_SPEED = 0.5  # Adjust this value to control the scrolling speed
 bg_y = 0  # This will track the y position of the background
 
 #BG/MENU SOUNDS
@@ -221,7 +225,7 @@ POWERUP1_FRAME_COUNT = 13
 POWERUP1_FRAME_WIDTH = POWERUPDUALGUN_IMAGE_SHEET.get_width() // POWERUP1_FRAME_COUNT
 POWERUP1_FRAME_HEIGHT = POWERUPDUALGUN_IMAGE_SHEET.get_height()
 
-DUALFIRE_DURATION = 10000  
+POWERUP1_DURATION = 12000  
 
 POWERUPDUALGUN_FRAMES = []
 for i in range(POWERUP1_FRAME_COUNT):

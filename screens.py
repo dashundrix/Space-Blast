@@ -1,17 +1,22 @@
 from settings import *
+import sys
 
 # Function to display the title screen
-def display_title_screen(WIN, BG, bg_y):
-    font = pygame.font.SysFont('ADLaM Display', 120)
-    title_text = font.render("SPACE BLAST", True, (255, 255, 255))
+def display_title_screen(WIN, BG, bg_y, cursor_img):
 
     BUTTON_WIDTH = 230
     BUTTON_HEIGHT = 50
     BUTTON_SPACING = 8
 
     # Load and scale ALL button images
+    SPACEBLAST_LOGO = pygame.image.load("assets/SpaceBlast.png")
+    SPACEBLAST_LOGO = pygame.transform.scale(SPACEBLAST_LOGO, (700,320))
+
     PLAY_BUTTON_IMAGE = pygame.image.load("assets/Start_Button.png")
     PLAY_BUTTON_IMAGE = pygame.transform.scale(PLAY_BUTTON_IMAGE, (BUTTON_WIDTH* 4, BUTTON_HEIGHT))
+    
+    REYES_LOGO = pygame.image.load("assets/SeanReyesGames.png")
+    REYES_LOGO = pygame.transform.scale(REYES_LOGO, (64,64))
     
     DIFFICULTY_BUTTON_IMAGE = pygame.image.load("assets/Difficulty_Button.png")
     DIFFICULTY_BUTTON_IMAGE = pygame.transform.scale(DIFFICULTY_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
@@ -32,26 +37,36 @@ def display_title_screen(WIN, BG, bg_y):
     current_time = pygame.time.get_ticks()
     animation_speed = 200
     frame_index = (current_time // animation_speed) % 4
+    
 
     # Create button rectangles
-    start_y = HEIGHT // 2 - 60
+    start_y = HEIGHT // 2 
+    spaceblast_logo = pygame.Rect(WIDTH // 2 - 300, 30 , 128, 128)
     play_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, start_y, BUTTON_WIDTH, BUTTON_HEIGHT)
     difficulty_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, start_y + BUTTON_HEIGHT + BUTTON_SPACING, BUTTON_WIDTH, BUTTON_HEIGHT)
     exit_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, start_y + (BUTTON_HEIGHT + BUTTON_SPACING) * 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+    reyes_logo = pygame.Rect(10, HEIGHT - 64 - 10 , 128, 128)
     
+
     WIN.fill((0, 0, 0))
-    WIN.blit(BG, (0, bg_y))
-    WIN.blit(BG, (0, bg_y - HEIGHT))
+    WIN.blit(BG2, (0, bg_y))
+    WIN.blit(BG2, (0, bg_y - HEIGHT))
 
     # Check if the background has scrolled off screen, and reset it
     if bg_y >= HEIGHT:
         bg_y = 0  # Reset the background position when it reaches the height of the screen
 
-    WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 4))
+    WIN.blit(SPACEBLAST_LOGO,(spaceblast_logo.x,spaceblast_logo.y))
     WIN.blit(PLAY_BUTTON_FRAMES[frame_index], (play_button.x, play_button.y))
     WIN.blit(DIFFICULTY_BUTTON_IMAGE, (difficulty_button.x, difficulty_button.y))
     WIN.blit(EXIT_BUTTON_IMAGE, (exit_button.x, exit_button.y))
+    WIN.blit(REYES_LOGO, (reyes_logo.x, reyes_logo.y))
+    
 
+    cursor_rect = cursor_img.get_rect()
+    cursor_rect.center = pygame.mouse.get_pos()
+    WIN.blit(cursor_img, cursor_rect)
+    
     pygame.display.update()
     
     return play_button, difficulty_button, exit_button, bg_y
@@ -123,37 +138,110 @@ def display_title_screen(WIN, BG, bg_y):
 def display_pause_screen(WIN):
     BUTTON_WIDTH = 200
     BUTTON_HEIGHT = 80
-    
-    # Load and scale button images
+   
     EXIT_BUTTON_IMAGE = pygame.image.load("assets/Exit_Button.png")
     EXIT_BUTTON_IMAGE = pygame.transform.scale(EXIT_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
     
+
+    PAUSE_BG = pygame.image.load("assets/backgroundspaceview.jpg")  # Create this image
+    PAUSE_BG = pygame.transform.scale(PAUSE_BG, (WIDTH, HEIGHT))
+   
     font = pygame.font.SysFont('Arial', 60)
     pause_text = font.render("PAUSED", True, (255, 0, 0))
 
-    overlay = pygame.Surface((WIDTH, HEIGHT))
-    overlay.set_alpha(0.1)
-    overlay.fill((0, 0, 0))
-
-    WIN.blit(overlay, (0, 0))
+  
+    continue_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 , BUTTON_WIDTH, BUTTON_HEIGHT)
+    exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 90, BUTTON_WIDTH, BUTTON_HEIGHT)
+    
+    # Draw the background image instead of using a transparent overlay
+    WIN.blit(PAUSE_BG, (0, 0))
     WIN.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 3))
 
-    continue_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, BUTTON_WIDTH, BUTTON_HEIGHT)
+    # Draw continue button
     pygame.draw.rect(WIN, (0, 255, 0), continue_button)
     continue_text = pygame.font.SysFont('Arial', 30).render("Continue", True, (0, 0, 0))
-    WIN.blit(continue_text, (continue_button.x + (continue_button.width - continue_text.get_width()) // 2, continue_button.y + (continue_button.height - continue_text.get_height()) // 2))
+    WIN.blit(continue_text, (continue_button.x + (continue_button.width - continue_text.get_width()) // 2, 
+                            continue_button.y + (continue_button.height - continue_text.get_height()) // 2))
 
-    exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, BUTTON_WIDTH, BUTTON_HEIGHT)
+    # Draw exit button
     WIN.blit(EXIT_BUTTON_IMAGE, (exit_button.x, exit_button.y))
+
+    # Draw cursor
+    cursor_rect = cursor_img.get_rect()
+    cursor_rect.center = pygame.mouse.get_pos()
+    WIN.blit(cursor_img, cursor_rect)
 
     pygame.display.update()
 
     return continue_button, exit_button
 
 # Game Over Display
-def display_game_over(WIN):
-    font = pygame.font.SysFont('Arial', 60)
-    game_over_text = font.render("GAME OVER", True, (255, 0, 0))
-    WIN.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height() // 2))
-    pygame.display.update()
-    pygame.time.delay(2000)
+def display_game_over(WIN, score, cursor_img):
+    # Set up fonts
+    title_font = pygame.font.SysFont('Arial', 60)
+    button_font = pygame.font.SysFont('Arial', 30)
+    score_font = pygame.font.SysFont('Arial', 40)
+
+    BUTTON_WIDTH = 200
+    BUTTON_HEIGHT = 80
+   
+    # Load and scale button images
+    EXIT_BUTTON_IMAGE = pygame.image.load("assets/Exit_Button.png")
+    EXIT_BUTTON_IMAGE = pygame.transform.scale(EXIT_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
+
+    GAMEOVER_BG = pygame.image.load("assets/backgroundspaceview.jpg")  # Create this image
+    GAMEOVER_BG = pygame.transform.scale(GAMEOVER_BG, (WIDTH, HEIGHT))
+   
+    # Create text surfaces
+    game_over_text = title_font.render("GAME OVER", True, (255, 0, 0))
+    score_text = score_font.render(f"Score: {score}", True, (255, 255, 255))
+    restart_text = button_font.render("Restart", True, (255, 255, 255))
+   
+    # Create button rectangles
+    restart_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+    exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, BUTTON_WIDTH, BUTTON_HEIGHT)
+   
+   
+    # Wait for user input
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if restart_button.collidepoint(mouse_pos):
+                    return "restart"
+                elif exit_button.collidepoint(mouse_pos):
+                    return "exit"
+       
+        # Update cursor position
+        cursor_rect = cursor_img.get_rect()
+        cursor_rect.center = pygame.mouse.get_pos()
+       
+        # REDRAW EVERYTHING each frame
+        # 1. Start with the overlay
+        WIN.blit(GAMEOVER_BG, (0, 0))
+       
+        # 2. Draw all text elements
+        WIN.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - 150))
+        WIN.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 2 - 50))
+       
+        # 3. Draw restart button
+        pygame.draw.rect(WIN, (50, 50, 50), restart_button)
+        pygame.draw.rect(WIN, (100, 100, 100), restart_button, 3)  # Button border
+        WIN.blit(restart_text, (restart_button.centerx - restart_text.get_width() // 2,
+                               restart_button.centery - restart_text.get_height() // 2))
+        
+        # 4. Draw exit button
+        WIN.blit(EXIT_BUTTON_IMAGE, (exit_button.x, exit_button.y))
+       
+        # 5. Draw cursor last
+        WIN.blit(cursor_img, cursor_rect)
+        
+        # 6. Update display
+        pygame.display.update()
+
+
+

@@ -6,11 +6,9 @@ from settings import *
 from sprites import *
 from screens import *
 
-
-
 # Drawing Function
-def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgun,
-         enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss, boss1_spawned ):
+def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerups1,
+         enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss, boss1_spawned  ):
     # Clear the screen first
     WIN.fill((0, 0, 0))
     
@@ -24,6 +22,8 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
     if bg_y >= HEIGHT:
         bg_y = 0  # Reset the background position when it reaches the height of the screen
     
+    
+
     player.draw(WIN)
     
     if boss1_spawned and boss is not None:    
@@ -43,7 +43,7 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
 
     for dual_bullet in dual_bullets:
         dual_bullet.draw(WIN)
-    for powerup1 in powerup_dualgun:
+    for powerup1 in powerups1:
         powerup1.draw(WIN)
 
     #Powerrup Mana
@@ -73,7 +73,8 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
    
     WIN.blit(score_text, (WIDTH //2 , 10))
     #WIN.blit(current_level, (10, 60))
-   
+
+
     pygame.display.update()
     return bg_y  # Return the updated bg_y to continue scrolling
 
@@ -81,7 +82,11 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerup_dualgu
 def main():
     run = True
     clock = pygame.time.Clock()
-   
+    pygame.mouse.set_visible(False)
+    game_time = 0
+    last_update = pygame.time.get_ticks()
+
+    
     global gamelevel
     gamelevel = 1
     
@@ -93,7 +98,7 @@ def main():
     enemy_bullets = []
     asteroids = []
     explosions = []
-    powerup_dualgun = []
+    powerups1 = []
     
     previous_score = 0
     score = 0
@@ -114,7 +119,7 @@ def main():
     game_paused = False
     map_speed = settings.BG_SCROLL_SPEED
    
-    play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y)
+    play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
     # Wait for player to click play button to start
     
     game_started = False
@@ -141,7 +146,7 @@ def main():
         if bg_y >= HEIGHT:  # Reset background when it scrolls off the screen
             bg_y = 0
         # Redraw the title screen with updated background position
-        play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y)
+        play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
 
         # Refresh the screen after drawing the title screen with updated bg_y
         pygame.display.update()
@@ -153,19 +158,27 @@ def main():
     while run:
         clock.tick(60)
 
-        
-        time = pygame.time.get_ticks() / 1000  # Get time in seconds
+        current_time = pygame.time.get_ticks()
+        if not game_paused:
+            # Only update game time when not paused
+            delta_time = (current_time - last_update) / 1000.0
+            game_time += delta_time
+
+        last_update = current_time
+        #print(f"Game Time: {game_time:.1f}")
+                
        
-        
+       
+       
         if score >= 300 * (gamelevel) and score != previous_score:
             gamelevel += 1
             previous_score = score  # Update the previous score to prevent continuous level increase
-            map_speed += 3  # Increase map speed for the new level
+            map_speed += 1  # Increase map speed for the new level
 
             
             # ///// BACKGROUND CHANGE ///// AnyLogic can apply 
             # Add background changing logic here
-            if True:  # Even levels
+            if True:  
                 settings.CURRENT_BG = settings.BG
                 print("Changed to BG1")
             else:  # Odd levels
@@ -175,7 +188,7 @@ def main():
             enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
 
         # Spawn the boss after 10 seconds
-        if time >= 20 and not boss1_spawned:
+        if game_time >= 20 and not boss1_spawned and game_started == True:
             boss1_spawned = True
             boss = Boss1(WIDTH // 2 - BOSS_WIDTH // 2, -300)  # Initialize the boss
             print("Boss spawned!")  # Debugging: Confirm boss spawn
@@ -216,9 +229,89 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-        if not player.is_alive():
-            display_game_over(WIN)
-            break
+            # Replace the current game over handling in main():
+            if not player.is_alive():
+                action = display_game_over(WIN, score, cursor_img)
+                if action == "restart":
+                    # Reset game state
+                    player = Player(500, 350)
+                    enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(1 + gamelevel // 2)]
+                    boss = False
+                    bullets = []
+                    dual_bullets = []
+                    enemy_bullets = []
+                    asteroids = []
+                    explosions = []
+                    powerups1 = []
+                    score = 0
+                    gamelevel = 1
+                    game_time = 0
+                    boss1_spawned = False
+                    dualfire = False
+                    singlefire = True
+                    current_bullet_interval = settings.BULLET_INTERVAL
+                    map_speed = settings.BG_SCROLL_SPEED
+                    continue  # Skip to next iteration with reset game
+                else:  # "exit"
+                    # Return to title screen instead of exiting the game
+                    bg_y = 0  # Reset background position
+                    game_started = False
+                    # Stop game music and play title screen music if you have any
+                    pygame.mixer.music.stop()
+                    
+                    # Display title screen and wait for player input
+                    while not game_started:
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                run = False
+                                game_started = True  # End the loop if quitting
+                            if event.type == pygame.MOUSEBUTTONDOWN:
+                                if play_button.collidepoint(event.pos):  # Check if the play button was clicked
+                                    game_started = True  # Proceed to game loop after clicking play
+                                    game_paused = False  # Ensure it's not paused when game starts
+                                    settings.play_game_music()
+                                    
+                                    # Reset game state for new game
+                                    player = Player(500, 350)
+                                    enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(1 + gamelevel // 2)]
+                                    boss = False
+                                    bullets = []
+                                    dual_bullets = []
+                                    enemy_bullets = []
+                                    asteroids = []
+                                    explosions = []
+                                    powerups1 = []
+                                    score = 0
+                                    gamelevel = 1
+                                    game_time = 0
+                                    boss1_spawned = False
+                                    dualfire = False
+                                    singlefire = True
+                                    current_bullet_interval = settings.BULLET_INTERVAL
+                                    map_speed = settings.BG_SCROLL_SPEED
+                                elif difficulty_button.collidepoint(event.pos):
+                                    # Add difficulty selection logic here
+                                    pass
+                                elif exit_button.collidepoint(event.pos):
+                                    run = False
+                                    game_started = True
+                        
+                        # Continuously update the background position to scroll it
+                        bg_y += 1  # Increase the vertical position for scrolling effect
+                        if bg_y >= HEIGHT:  # Reset background when it scrolls off the screen
+                            bg_y = 0
+                        # Redraw the title screen with updated background position
+                        play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
+
+                        # Refresh the screen after drawing the title screen with updated bg_y
+                        pygame.display.update()
+                    
+                    # If we're here, either play was clicked or exit was clicked
+                    if not run:  # If exit was clicked
+                        break  # Exit the main game loop
+                    continue  # If play was clicked, continue to the game loop
+
+
 
         # Game logic will only run if the game is not paused
         keys = pygame.key.get_pressed()
@@ -232,14 +325,14 @@ def main():
         if current_time - last_powerup1_time > powerup1_interval:
             powerup_x = random.randint(0, WIDTH - POWERUP_WIDTH)
             powerup_y = random.randint(-100, -50)  # Start above the screen
-            powerup_dualgun.append(PowerUpDualGun(powerup_x, powerup_y))
+            powerups1.append(PowerUpDualGun(powerup_x, powerup_y))
             last_powerup1_time = current_time
             powerup1_interval = random.randint(7000, 13000)  # Randomize next spawn interval
                 
             # Check for collision between player and enemies
 
         # Update and handle power-up behavior
-        for powerup1 in powerup_dualgun[:]:
+        for powerup1 in powerups1[:]:
             powerup1.move()
             if powerup1.rect.colliderect(player.rect):  # Player collects power-up
                 random_effect = random.randint(1, 4)
@@ -264,10 +357,10 @@ def main():
                 print("HEALTH +")
 
                     
-                dualfire_end_time = current_time + DUALFIRE_DURATION  # Set duration
-                powerup_dualgun.remove(powerup1)
+                dualfire_end_time = current_time + POWERUP1_DURATION  # Set duration
+                powerups1.remove(powerup1)
             elif powerup1.rect.y > HEIGHT:  # Remove off-screen power-ups
-                powerup_dualgun.remove(powerup1)
+                powerups1.remove(powerup1)
         # Check if dualfire duration has ended
         if dualfire and current_time > dualfire_end_time:
             dualfire = False
@@ -383,7 +476,7 @@ def main():
         
 
         bg_y = draw(WIN, settings.CURRENT_BG, player, enemies, bullets, dual_bullets, 
-                    powerup_dualgun, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss,  boss1_spawned)
+                    powerups1, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss,  boss1_spawned)
 
     pygame.quit()
 
