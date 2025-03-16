@@ -7,68 +7,87 @@ from main import *
 
 # Player Class
 class Player:
-    def __init__(self, x, y):
+    def __init__(self, x, y, ship_type=1):
+        self.ship_type = ship_type
         self.rect = pygame.Rect(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)
-        self.frames = PLAYER_FRAMES  # Frames organized by direction
-        self.direction = "idle"  # Default direction
+        
+        # Use the same frames for now, but you can add different frames for each ship type
+        self.frames = PLAYER_FRAMES
+        
+        self.direction = "idle"
         self.frame_index = 0
         self.animation_speed = 4
         self.frame_counter = 0
         self.image = self.frames[self.direction][self.frame_index]
-
-        self.lives = 10  # Starting lives
-
+        
+        # Set ship-specific attributes based on ship_type
+        if ship_type == 1:  # Falcon
+            self.speed = PLAYER_SPEED  # Normal speed
+            self.lives = 10
+            self.bullet_power = 1
+        elif ship_type == 2:  # Destroyer
+            self.speed = PLAYER_SPEED - 2  # Slower
+            self.lives = 12  # More health
+            self.bullet_power = 2  # Stronger bullets
+        elif ship_type == 3:  # Phantom
+            self.speed = PLAYER_SPEED + 2  # Faster
+            self.lives = 8  # Less health
+            self.bullet_power = 1.5  # Medium bullet power
+        else:
+            # Default values
+            self.speed = PLAYER_SPEED
+            self.lives = 10
+            self.bullet_power = 1
+    
+    # Update the move method to use the ship-specific speed
     def move(self, keys):
         moving = False
-
+        
         # Reset direction to idle by default
         self.direction = "idle"
-
+        
         # Horizontal movement (left and right)
-        if keys[pygame.K_a] and self.rect.x - PLAYER_SPEED >= 0:
-            self.rect.x -= PLAYER_SPEED
+        if keys[pygame.K_a] and self.rect.x - self.speed >= 0:
+            self.rect.x -= self.speed
             self.direction = "left"
             moving = True
-        elif keys[pygame.K_d] and self.rect.x + PLAYER_SPEED + self.rect.width <= WIDTH:
-            self.rect.x += PLAYER_SPEED
+        elif keys[pygame.K_d] and self.rect.x + self.speed + self.rect.width <= WIDTH:
+            self.rect.x += self.speed
             self.direction = "right"
             moving = True
-
+        
         # Vertical movement (up and down)
-        if keys[pygame.K_w] and self.rect.y - PLAYER_SPEED >= 0:
-            self.rect.y -= PLAYER_SPEED
+        if keys[pygame.K_w] and self.rect.y - self.speed >= 0:
+            self.rect.y -= self.speed
             moving = True
             if self.direction == "left":
-                self.direction = "up-left"  # Diagonal direction
+                self.direction = "up-left"
             elif self.direction == "right":
-                self.direction = "up-right"  # Diagonal direction
+                self.direction = "up-right"
             else:
-                self.direction = "up"  # Vertical movement only
-
-        elif keys[pygame.K_s] and self.rect.y + PLAYER_SPEED + self.rect.height <= HEIGHT:
-            self.rect.y += PLAYER_SPEED
+                self.direction = "up"
+        
+        elif keys[pygame.K_s] and self.rect.y + self.speed + self.rect.height <= HEIGHT:
+            self.rect.y += self.speed
             moving = True
             if self.direction == "left":
-                self.direction = "down-left"  # Diagonal direction
+                self.direction = "down-left"
             elif self.direction == "right":
-                self.direction = "down-right"  # Diagonal direction
+                self.direction = "down-right"
             else:
-                self.direction = "down"  # Vertical movement only
-
+                self.direction = "down"
+        
         # If no movement detected, set direction to idle
         if not moving:
             self.direction = "idle"
-
-        # Debug: Check direction
-        #print(f"Current direction: {self.direction}")
-
+        
         # Update animation frames
         self.frame_counter += 1
         if self.frame_counter >= self.animation_speed:
             max_frames = len(self.frames[self.direction])
             self.frame_index = (self.frame_index + 1) % max_frames
             self.frame_counter = 0
-
+        
         # Update current frame with bounds check
         self.frame_index = min(self.frame_index, len(self.frames[self.direction]) - 1)
         self.image = self.frames[self.direction][self.frame_index]
@@ -83,13 +102,14 @@ class Player:
     
 # Bullet Classes Player
 class Bullet:
-    def __init__(self, x, y):
+    def __init__(self, x, y,power=1):
         self.rect = pygame.Rect(x + PLAYER_WIDTH // 2 - BULLET_WIDTH - 13 , y - PLAYERBULLET_HEIGHT + 13 , BULLET_WIDTH, BULLET_HEIGHT)
         self.frames = PLAYERBULLET1_FRAMES
         self.frame_index = 0
         self.animation_speed = 1
         self.frame_counter = 0
         self.image = self.frames[self.frame_index]
+        self.power = power
 
 
 
@@ -108,7 +128,7 @@ class Bullet:
         WIN.blit(self.image, (self.rect.x, self.rect.y))
 
 class BulletDual:
-    def __init__(self, x, y):
+    def __init__(self, x, y, power=1):
         self.rect_left = pygame.Rect(x , y + PLAYERBULLET_HEIGHT // 2 - 20, BULLET_WIDTH, BULLET_HEIGHT)  # Left bullet
         self.rect_right = pygame.Rect(x + PLAYER_WIDTH // 2 + 14  , y + PLAYERBULLET_HEIGHT // 2 - 20, BULLET_WIDTH, BULLET_HEIGHT)  # Right bullet
         self.frames = PLAYERBULLET2_FRAMES
@@ -118,8 +138,8 @@ class BulletDual:
         self.image = self.frames[self.frame_index]
         self.initial_y = y
         self.spread_factor = 0.01  # Adjust this value to control spread amount
-
-   
+        self.power = power
+    
 
     def move(self):
         distance_traveled = self.initial_y - self.rect_left.y

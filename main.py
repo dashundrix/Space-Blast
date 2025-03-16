@@ -89,8 +89,8 @@ def main():
     
     global gamelevel
     gamelevel = 1
-    
-    player = Player(500, 350)
+    selected_ship = 1
+    player = Player(WIDTH // 2, HEIGHT - 250, selected_ship)
     enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(1 + gamelevel // 2)]
     boss = False
     bullets = []
@@ -130,11 +130,23 @@ def main():
                 game_started = True  # End the loop if quitting
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.collidepoint(event.pos):  # Check if the play button was clicked
-                    game_started = True  # Proceed to game loop after clicking play
-                    gameplay_started = True
-                    last_update = pygame.time.get_ticks()
-                    game_paused = False  # Ensure it's not paused when game starts
-                    settings.play_game_music()
+                    if play_button.collidepoint(event.pos):
+                        # Show character selection before starting the game
+                        ship_choice = display_character_selection(WIN, bg_y, cursor_img)
+                        if ship_choice is None:
+                            # Player clicked back, return to title screen
+                            play_button, difficulty_button, leaderboard_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
+                            continue
+                        
+                        # Set the selected ship and start the game
+                        selected_ship = ship_choice
+                        player = Player(WIDTH // 2, HEIGHT - 250, selected_ship)  # Create player with selected ship
+                        
+                        game_started = True
+                        gameplay_started = True
+                        game_paused = False
+                        last_update = pygame.time.get_ticks()
+                        settings.play_game_music()
                 elif difficulty_button.collidepoint(event.pos):
                     # Add difficulty selection logic here
                     pass
@@ -244,8 +256,23 @@ def main():
                 pygame.mixer.music.stop()
                 action = display_game_over(WIN, score, cursor_img)
                 if action == "restart":
+                    # Show character selection before restarting
+                    ship_choice = display_character_selection(WIN, bg_y, cursor_img)
+                    if ship_choice is None:
+                        # Player clicked back, return to title screen
+                        bg_y = 0
+                        game_started = False
+                        gameplay_started = False
+                        
+                        # Display title screen and wait for player input
+                        play_button, difficulty_button, leaderboard_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
+                        continue  
+
+                    # Set the selected ship and restart the game
+                    selected_ship = ship_choice
+
                     # Reset game state
-                    player = Player(500, 350)
+                    player = Player(WIDTH // 2, HEIGHT - 250, selected_ship)
                     enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(1 + gamelevel // 2)]
                     boss = False
                     bullets = []
@@ -283,12 +310,16 @@ def main():
                                 game_started = True  # End the loop if quitting
                             if event.type == pygame.MOUSEBUTTONDOWN:
                                 if play_button.collidepoint(event.pos):  # Check if the play button was clicked
-                                    game_started = True  # Proceed to game loop after clicking play
-                                    game_paused = False  # Ensure it's not paused when game starts
-                                    settings.play_game_music()
-                                    
+                                    # Show character selection before starting the game
+                                    ship_choice = display_character_selection(WIN, bg_y, cursor_img)
+                                    if ship_choice is None:
+                                        # Player clicked back, return to title screen
+                                        play_button, difficulty_button, leaderboard_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
+                                        continue
+                                        
                                     # Reset game state for new game
-                                    player = Player(500, 350)
+                                    selected_ship = ship_choice
+                                    player = Player(WIDTH // 2, HEIGHT - 250, selected_ship)
                                     enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(1 + gamelevel // 2)]
                                     boss = False
                                     bullets = []
@@ -395,13 +426,13 @@ def main():
        
         if singlefire == True : # Single Bullet Firing
             if current_time - last_bullet_time > current_bullet_interval:
-                bullets.append(Bullet(player.rect.x, player.rect.y))
+                bullets.append(Bullet(player.rect.x, player.rect.y, player.bullet_power))
                 last_bullet_time = current_time
                 shoot_sound_player.play()
 
         if dualfire == True : # Dual Bullet Firing (testing mode — always enabled)
             if current_time - last_dual_bullet_time > current_bullet_interval:  # Use a separate timer for dual bullets
-                dual_bullets.append(BulletDual(player.rect.x, player.rect.y))
+                dual_bullets.append(BulletDual(player.rect.x, player.rect.y, player.bullet_power))
                 last_dual_bullet_time = current_time
                 shoot_sound_player.play()
 
@@ -427,15 +458,27 @@ def main():
             # Check collision with regular bullets
             for bullet in bullets[:]:
                 if enemy.rect.colliderect(bullet.rect):
-                    enemy.take_damage()  # Decrease the enemy's health by 1
-                    if enemy.take_damage():
+                    # Apply damage based on bullet power
+                    damage_done = False
+                    for _ in range(int(bullet.power)):
+                        if enemy.take_damage():
+                            damage_done = True
+                            break
+                    
+                    # Handle fractional damage (for bullet power like 1.5)
+                    if not damage_done and bullet.power % 1 > 0:
+                        if random.random() < (bullet.power % 1):
+                            enemy.take_damage()
+                    
+                    if enemy.lives <= 0:
                         explosions.append(Explosion(enemy.rect.centerx - 10, enemy.rect.centery - 10))
-                        enemies.remove(enemy)  # Remove the enemy
+                        enemies.remove(enemy)
                         enemies.append(Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100))
-                        score += 10  # Increase score when an enemy is killed
-                        enemy_removed = True  # Mark enemy as removed
-                    bullets.remove(bullet)  # Remove the bullet after collision
-                    break  # Exit bullet loop if collision occurs
+                        score += 10
+                        enemy_removed = True
+                    
+                    bullets.remove(bullet)
+                    break
 
 
             if enemy_removed:
@@ -444,15 +487,27 @@ def main():
             # Check collision with dual bullets
             for dual_bullet in dual_bullets[:]:
                 if enemy.rect.colliderect(dual_bullet.rect_left) or enemy.rect.colliderect(dual_bullet.rect_right):
-                    enemy.take_damage()  # Decrease the enemy's health by 1
-                    if enemy.take_damage():
+                    # Apply damage based on bullet power
+                    damage_done = False
+                    for _ in range(int(dual_bullet.power)):
+                        if enemy.take_damage():
+                            damage_done = True
+                            break
+                    
+                    # Handle fractional damage (for bullet power like 1.5)
+                    if not damage_done and dual_bullet.power % 1 > 0:
+                        if random.random() < (dual_bullet.power % 1):
+                            enemy.take_damage()
+                    
+                    if enemy.lives <= 0:
                         explosions.append(Explosion(enemy.rect.centerx - 10, enemy.rect.centery - 10))
-                        enemies.remove(enemy)  # Remove the enemy
+                        enemies.remove(enemy)
                         enemies.append(Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100))
-                        score += 10  # Increase score when an enemy is killed
-                        enemy_removed = True  # Mark enemy as removed
-                    dual_bullets.remove(dual_bullet)  # Remove the dual bullet after collision
-                    break  # Exit dual bullet loop if collision occurs
+                        score += 10
+                        enemy_removed = True
+                    
+                    dual_bullets.remove(dual_bullet)
+                    break
 
             if enemy_removed:
                 continue  # Skip processing this enemy further

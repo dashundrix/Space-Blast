@@ -81,6 +81,162 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
     
     return play_button, difficulty_button,leaderboard_button, exit_button, bg_y
 
+def display_character_selection(WIN, bg_y, cursor_img):
+    """Display character selection screen with different animated ship options"""
+    # Set up fonts
+    title_font = pygame.font.SysFont('Arial', 48)
+    button_font = pygame.font.SysFont('Arial', 24)
+    
+    # Create ship selection frames - using your existing animation system
+    ship_types = [
+        {
+            "id": 1,
+            "name": "Falcon",
+            "frames": PLAYER_FRAMES,  # Use your existing animation frames
+            "stats": "Speed: ★★★☆☆\nPower: ★★☆☆☆",
+            "description": "Balanced fighter with good maneuverability"
+        },
+        {
+            "id": 2,
+            "name": "Destroyer",
+            "frames": PLAYER_FRAMES,  # For now using same frames, you can replace with new ones
+            "stats": "Speed: ★★☆☆☆\nPower: ★★★★☆",
+            "description": "Heavy fighter with powerful weapons"
+        },
+        {
+            "id": 3,
+            "name": "Phantom",
+            "frames": PLAYER_FRAMES,  # For now using same frames, you can replace with new ones
+            "stats": "Speed: ★★★★☆\nPower: ★★★☆☆",
+            "description": "Fast scout ship with rapid-fire weapons"
+        }
+    ]
+    
+    # Animation variables
+    animation_speed = 4
+    frame_counters = [0, 0, 0]
+    frame_indices = [0, 0, 0]
+    
+    # Create ship selection buttons
+    ship_spacing = 300
+    start_x = WIDTH // 2 - (ship_spacing * 3) // 2 + ship_spacing // 2
+    
+    ship_rects = [
+        pygame.Rect(start_x, HEIGHT // 2 - 100, PLAYER_WIDTH, PLAYER_HEIGHT),
+        pygame.Rect(start_x + ship_spacing, HEIGHT // 2 - 100, PLAYER_WIDTH, PLAYER_HEIGHT),
+        pygame.Rect(start_x + ship_spacing * 2, HEIGHT // 2 - 100, PLAYER_WIDTH, PLAYER_HEIGHT)
+    ]
+    
+    # Create back button
+    back_button = pygame.Rect(50, HEIGHT - 80, 120, 50)
+    back_text = button_font.render("Back", True, (255, 255, 255))
+    
+    # Create select button
+    select_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT - 80, 200, 50)
+    select_text = button_font.render("Select Ship", True, (255, 255, 255))
+    
+    # Track selected ship
+    selected_ship = 1  # Default to first ship
+    
+    # Main selection loop
+    running = True
+    clock = pygame.time.Clock()
+    
+    while running:
+        clock.tick(60)  # Limit to 60 FPS for consistent animations
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                
+                # Check if a ship was clicked
+                for i, rect in enumerate(ship_rects):
+                    if rect.collidepoint(mouse_pos):
+                        selected_ship = ship_types[i]["id"]
+                
+                # Check if back button was clicked
+                if back_button.collidepoint(mouse_pos):
+                    return None  # Return to title screen without selection
+                
+                # Check if select button was clicked
+                if select_button.collidepoint(mouse_pos):
+                    return selected_ship  # Return the selected ship ID
+        
+        # Update background position for scrolling effect
+        bg_y += 1
+        if bg_y >= HEIGHT:
+            bg_y = 0
+            
+        # Draw everything
+        WIN.fill((0, 0, 0))
+        WIN.blit(BG, (0, bg_y))
+        WIN.blit(BG, (0, bg_y - HEIGHT))
+        
+        # Draw title
+        title_text = title_font.render("SELECT YOUR SHIP", True, (255, 255, 255))
+        WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 80))
+        
+        # Draw ships with animations
+        for i, ship in enumerate(ship_types):
+            # Update animation
+            frame_counters[i] += 1
+            if frame_counters[i] >= animation_speed:
+                frame_indices[i] = (frame_indices[i] + 1) % len(ship["frames"]["idle"])
+                frame_counters[i] = 0
+            
+            # Draw selection highlight
+            if ship["id"] == selected_ship:
+                highlight_rect = ship_rects[i].inflate(40, 40)
+                pygame.draw.rect(WIN, (0, 255, 0), highlight_rect, 3, border_radius=10)
+            
+            # Draw ship animation frame
+            current_frame = ship["frames"]["idle"][frame_indices[i]]
+            WIN.blit(current_frame, ship_rects[i])
+            
+            # Draw ship name
+            name_text = button_font.render(ship["name"], True, (255, 255, 255))
+            WIN.blit(name_text, (ship_rects[i].centerx - name_text.get_width() // 2, 
+                                ship_rects[i].bottom + 10))
+            
+            # Draw ship stats
+            stats_lines = ship["stats"].split('\n')
+            for j, line in enumerate(stats_lines):
+                stat_text = pygame.font.SysFont('Arial', 18).render(line, True, (200, 200, 200))
+                WIN.blit(stat_text, (ship_rects[i].centerx - stat_text.get_width() // 2, 
+                                    ship_rects[i].bottom + 40 + j * 20))
+            
+            # Draw ship description
+            desc_text = pygame.font.SysFont('Arial', 16).render(ship["description"], True, (180, 180, 180))
+            WIN.blit(desc_text, (ship_rects[i].centerx - desc_text.get_width() // 2, 
+                                ship_rects[i].bottom + 90))
+        
+        # Draw back button
+        pygame.draw.rect(WIN, (80, 80, 80), back_button, border_radius=5)
+        pygame.draw.rect(WIN, (150, 150, 150), back_button, 2, border_radius=5)
+        WIN.blit(back_text, (back_button.centerx - back_text.get_width()//2, 
+                            back_button.centery - back_text.get_height()//2))
+        
+        # Draw select button
+        pygame.draw.rect(WIN, (0, 100, 0), select_button, border_radius=5)
+        pygame.draw.rect(WIN, (0, 200, 0), select_button, 2, border_radius=5)
+        WIN.blit(select_text, (select_button.centerx - select_text.get_width()//2, 
+                              select_button.centery - select_text.get_height()//2))
+        
+        # Draw cursor
+        cursor_rect = cursor_img.get_rect()
+        cursor_rect.center = pygame.mouse.get_pos()
+        WIN.blit(cursor_img, cursor_rect)
+        
+        pygame.display.update()
+    
+    return selected_ship
+
+
+
 # Add these new functions for leaderboard functionality
 def save_score(player_name, score):
     """Save a player's score to the leaderboard file"""
@@ -298,69 +454,6 @@ def display_leaderboard(WIN, bg_y, cursor_img):
         pygame.display.update()
     
     return bg_y
-
-#def display_character_selection(WIN, BG, bg_y):
-    # Create font for title
-    font = pygame.font.SysFont('ADLaM Display', 48)
-    select_text = font.render("SELECT YOUR SHIP", True, (255, 255, 255))
-    
-    # Character slots dimensions
-    SLOT_WIDTH = 200
-    SLOT_HEIGHT = 200
-    SPACING = 50
-    
-    # Load character ships (add your ship images)
-    ship1 = pygame.image.load("assets/ship1.png")
-    ship2 = pygame.image.load("assets/ship2.png")
-    ship3 = pygame.image.load("assets/ship3.png")
-    
-    # Scale ships to fit slots
-    ship1 = pygame.transform.scale(ship1, (SLOT_WIDTH - 40, SLOT_HEIGHT - 40))
-    ship2 = pygame.transform.scale(ship2, (SLOT_WIDTH - 40, SLOT_HEIGHT - 40))
-    ship3 = pygame.transform.scale(ship3, (SLOT_WIDTH - 40, SLOT_HEIGHT - 40))
-    
-    # Create character slots
-    total_width = (SLOT_WIDTH * 3) + (SPACING * 2)
-    start_x = (WIDTH - total_width) // 2
-    
-    slot1 = pygame.Rect(start_x, HEIGHT // 2 - SLOT_HEIGHT // 2, SLOT_WIDTH, SLOT_HEIGHT)
-    slot2 = pygame.Rect(start_x + SLOT_WIDTH + SPACING, HEIGHT // 2 - SLOT_HEIGHT // 2, SLOT_WIDTH, SLOT_HEIGHT)
-    slot3 = pygame.Rect(start_x + (SLOT_WIDTH + SPACING) * 2, HEIGHT // 2 - SLOT_HEIGHT // 2, SLOT_WIDTH, SLOT_HEIGHT)
-    
-    # Scrolling background
-    WIN.fill((0, 0, 0))
-    WIN.blit(BG, (0, bg_y))
-    WIN.blit(BG, (0, bg_y - HEIGHT))
-    
-    if bg_y >= HEIGHT:
-        bg_y = 0
-    
-    # Draw title
-    WIN.blit(select_text, (WIDTH // 2 - select_text.get_width() // 2, HEIGHT // 4))
-    
-    # Draw character slots
-    for slot in [slot1, slot2, slot3]:
-        pygame.draw.rect(WIN, (100, 100, 100), slot, border_radius=10)
-        pygame.draw.rect(WIN, (255, 255, 255), slot, 3, border_radius=10)
-    
-    # Draw ships in slots
-    WIN.blit(ship1, (slot1.x + 20, slot1.y + 20))
-    WIN.blit(ship2, (slot2.x + 20, slot2.y + 20))
-    WIN.blit(ship3, (slot3.x + 20, slot3.y + 20))
-    
-    # Draw ship names
-    name_font = pygame.font.SysFont('Arial', 24)
-    ship1_name = name_font.render("Fighter", True, (255, 255, 255))
-    ship2_name = name_font.render("Destroyer", True, (255, 255, 255))
-    ship3_name = name_font.render("Scout", True, (255, 255, 255))
-    
-    WIN.blit(ship1_name, (slot1.centerx - ship1_name.get_width()//2, slot1.bottom + 10))
-    WIN.blit(ship2_name, (slot2.centerx - ship2_name.get_width()//2, slot2.bottom + 10))
-    WIN.blit(ship3_name, (slot3.centerx - ship3_name.get_width()//2, slot3.bottom + 10))
-    
-    pygame.display.update()
-    
-    return [slot1, slot2, slot3], bg_y
 
 # Function to display the pause screen with transparency
 def display_pause_screen(WIN):
