@@ -1,5 +1,6 @@
 from settings import *
 import sys
+import os
 
 # Function to display the title screen
 def display_title_screen(WIN, BG, bg_y, cursor_img):
@@ -24,6 +25,9 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
     EXIT_BUTTON_IMAGE = pygame.image.load("assets/Exit_Button.png")
     EXIT_BUTTON_IMAGE = pygame.transform.scale(EXIT_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
 
+    LEADERBOARD_BUTTON_IMAGE = pygame.image.load("assets/LEADERBOARD_BUTTON.png")
+    LEADERBOARD_BUTTON_IMAGE = pygame.transform.scale(LEADERBOARD_BUTTON_IMAGE, (128 , 128))
+
     # Get frame width from the sprite sheet automatically
     frame_width = PLAY_BUTTON_IMAGE.get_width() // 4
     frame_height = PLAY_BUTTON_IMAGE.get_height()
@@ -45,12 +49,14 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
     play_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, start_y, BUTTON_WIDTH, BUTTON_HEIGHT)
     difficulty_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, start_y + BUTTON_HEIGHT + BUTTON_SPACING, BUTTON_WIDTH, BUTTON_HEIGHT)
     exit_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, start_y + (BUTTON_HEIGHT + BUTTON_SPACING) * 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+    leaderboard_button = pygame.Rect(WIDTH - 140, HEIGHT - 140 , 128, 128)
     reyes_logo = pygame.Rect(10, HEIGHT - 64 - 10 , 128, 128)
+
     
 
     WIN.fill((0, 0, 0))
-    WIN.blit(BG2, (0, bg_y))
-    WIN.blit(BG2, (0, bg_y - HEIGHT))
+    WIN.blit(BG, (0, bg_y))
+    WIN.blit(BG, (0, bg_y - HEIGHT))
 
     # Check if the background has scrolled off screen, and reset it
     if bg_y >= HEIGHT:
@@ -59,6 +65,10 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
     WIN.blit(SPACEBLAST_LOGO,(spaceblast_logo.x,spaceblast_logo.y))
     WIN.blit(PLAY_BUTTON_FRAMES[frame_index], (play_button.x, play_button.y))
     WIN.blit(DIFFICULTY_BUTTON_IMAGE, (difficulty_button.x, difficulty_button.y))
+    WIN.blit(LEADERBOARD_BUTTON_IMAGE, (leaderboard_button.x, leaderboard_button.y)) 
+    leaderboard_text = pygame.font.SysFont('Arial', 25).render("Leaderboard", True, (255, 255, 255))
+    WIN.blit(leaderboard_text, (leaderboard_button.x + 64 - leaderboard_text.get_width()//2, 
+                               leaderboard_button.y + 64 - leaderboard_text.get_height()//2))
     WIN.blit(EXIT_BUTTON_IMAGE, (exit_button.x, exit_button.y))
     WIN.blit(REYES_LOGO, (reyes_logo.x, reyes_logo.y))
     
@@ -69,7 +79,225 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
     
     pygame.display.update()
     
-    return play_button, difficulty_button, exit_button, bg_y
+    return play_button, difficulty_button,leaderboard_button, exit_button, bg_y
+
+# Add these new functions for leaderboard functionality
+def save_score(player_name, score):
+    """Save a player's score to the leaderboard file"""
+    try:
+        # Open the file in append mode
+        with open("leaderboard.txt", "a") as file:
+            # Write the name and score on a new line
+            file.write(f"{player_name},{score}\n")
+    except Exception as e:
+        print(f"Error saving score: {e}")
+
+def load_scores():
+    """Load all scores from the leaderboard file and return sorted list"""
+    scores = []
+    try:
+        # Check if file exists first
+        if not os.path.exists("leaderboard.txt"):
+            return []
+            
+        # Open the file in read mode
+        with open("leaderboard.txt", "r") as file:
+            # Read each line
+            for line in file:
+                # Split the line by comma to get name and score
+                if "," in line:
+                    name, score_str = line.strip().split(",")
+                    # Convert score to integer
+                    score = int(score_str)
+                    scores.append((name, score))
+    except Exception as e:
+        print(f"Error loading scores: {e}")
+    
+    # Sort scores by score value (highest first)
+    scores.sort(key=lambda x: x[1], reverse=True)
+    
+    # Return only top 10 scores
+    return scores[:10]
+
+# Add name input screen
+def display_name_input(WIN, score, cursor_img):
+    """Display screen for player to enter their name"""
+    # Set up fonts
+    title_font = pygame.font.SysFont('Arial', 48)
+    input_font = pygame.font.SysFont('Arial', 36)
+    
+    # Create input box
+    input_box = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2, 400, 50)
+    input_text = ""
+    active = True
+    
+    # Create submit button
+    submit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50)
+    submit_text = pygame.font.SysFont('Arial', 24).render("Submit", True, (255, 255, 255))
+    
+    # Background image
+    GAMEOVER_BG = pygame.image.load("assets/backgroundspaceview2.png")
+    GAMEOVER_BG = pygame.transform.scale(GAMEOVER_BG, (WIDTH, HEIGHT))
+    
+    # Main input loop
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if active:
+                    if event.key == pygame.K_RETURN:
+                        # Submit name
+                        if input_text:
+                            save_score(input_text, score)
+                            return
+                    elif event.key == pygame.K_BACKSPACE:
+                        input_text = input_text[:-1]
+                    else:
+                        # Limit name length to 15 characters
+                        if len(input_text) < 24:
+                            input_text += event.unicode
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if submit_button.collidepoint(mouse_pos) and input_text:
+                    save_score(input_text, score)
+                    return
+        
+        # Draw everything
+        WIN.blit(GAMEOVER_BG, (0, 0))
+        
+        # Draw title
+        title_text = title_font.render(f"Your Score: {score}", True, (255, 255, 255))
+        WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 4))
+        
+        # Draw prompt
+        prompt_text = input_font.render("Enter your name:", True, (255, 255, 255))
+        WIN.blit(prompt_text, (WIDTH // 2 - prompt_text.get_width() // 2, HEIGHT // 2 - 80))
+        
+        # Draw input box
+        pygame.draw.rect(WIN, (100, 100, 100), input_box)
+        pygame.draw.rect(WIN, (255, 255, 255), input_box, 2)
+        
+        # Draw input text
+        text_surface = input_font.render(input_text, True, (255, 255, 255))
+        WIN.blit(text_surface, (input_box.x + 10, input_box.y + 10))
+        
+        # Draw submit button
+        button_color = (0, 150, 0) if input_text else (100, 100, 100)
+        pygame.draw.rect(WIN, button_color, submit_button, border_radius=5)
+        pygame.draw.rect(WIN, (255, 255, 255), submit_button, 2, border_radius=5)
+        WIN.blit(submit_text, (submit_button.centerx - submit_text.get_width()//2, 
+                              submit_button.centery - submit_text.get_height()//2))
+        
+        # Draw cursor
+        cursor_rect = cursor_img.get_rect()
+        cursor_rect.center = pygame.mouse.get_pos()
+        WIN.blit(cursor_img, cursor_rect)
+        
+        pygame.display.update()
+
+
+# Add leaderboard display screen
+def display_leaderboard(WIN, bg_y, cursor_img):
+    """Display the leaderboard screen"""
+    # Load scores
+    scores = load_scores()
+    
+    # Background image
+    LEADERBOARD_BG = pygame.image.load("assets/backgroundspaceview.jpg")
+    LEADERBOARD_BG = pygame.transform.scale(LEADERBOARD_BG, (WIDTH, HEIGHT))
+
+    # Create font for title and scores
+    title_font = pygame.font.SysFont('Arial', 48)
+    score_font = pygame.font.SysFont('Arial', 24)
+    
+    # Create back button
+    back_button = pygame.Rect(50, HEIGHT - 80, 120, 50)
+    back_text = pygame.font.SysFont('Arial', 24).render("Back", True, (255, 255, 255))
+    
+    # Main leaderboard loop
+    running = True
+    while running:
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if back_button.collidepoint(mouse_pos):
+                    return bg_y  # Return to title screen
+        
+        # Update background position for scrolling effect
+        bg_y += 1
+        if bg_y >= HEIGHT:
+            bg_y = 0
+            
+        # Draw everything
+        WIN.fill((0, 0, 0))
+        WIN.blit(LEADERBOARD_BG, (0, 0))
+        
+        # Draw title
+        title_text = title_font.render("LEADERBOARD", True, (255, 255, 255))
+        WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 10))
+        
+        # Draw scores
+        if not scores:
+            no_scores_text = score_font.render("No scores yet!", True, (255, 255, 255))
+            WIN.blit(no_scores_text, (WIDTH // 2 - no_scores_text.get_width() // 2, HEIGHT // 2))
+        else:
+            # Calculate centered positions
+            table_width = 500  # Total width of our table
+            left_margin = (WIDTH - table_width) // 2  # Starting X position to center the table
+            
+            # Column positions
+            rank_x = left_margin
+            name_x = left_margin + 100
+            score_x = left_margin + 400
+            
+            # Draw header
+            header_y = 120
+            rank_header = score_font.render("Rank", True, (255, 255, 0))
+            name_header = score_font.render("Name", True, (255, 255, 0))
+            score_header = score_font.render("Score", True, (255, 255, 0))
+            
+            WIN.blit(rank_header, (rank_x, header_y))
+            WIN.blit(name_header, (name_x, header_y))
+            WIN.blit(score_header, (score_x, header_y))
+            
+            # Draw horizontal line
+            pygame.draw.line(WIN, (255, 255, 255), 
+                            (left_margin - 20, header_y + 30), 
+                            (left_margin + table_width, header_y + 30), 2)
+            
+            # Draw each score entry
+            for i, (name, score) in enumerate(scores):
+                y_pos = 170 + i * 40
+                rank_text = score_font.render(f"{i+1}.", True, (255, 255, 255))
+                name_text = score_font.render(str(name), True, (255, 255, 255))
+                score_text = score_font.render(str(score), True, (255, 255, 255))
+                
+                WIN.blit(rank_text, (rank_x, y_pos))
+                WIN.blit(name_text, (name_x, y_pos))
+                WIN.blit(score_text, (score_x, y_pos))
+
+        
+        # Draw back button
+        pygame.draw.rect(WIN, (80, 80, 80), back_button, border_radius=5)
+        pygame.draw.rect(WIN, (150, 150, 150), back_button, 2, border_radius=5)
+        WIN.blit(back_text, (back_button.centerx - back_text.get_width()//2, 
+                            back_button.centery - back_text.get_height()//2))
+        
+        # Draw cursor
+        cursor_rect = cursor_img.get_rect()
+        cursor_rect.center = pygame.mouse.get_pos()
+        WIN.blit(cursor_img, cursor_rect)
+        
+        pygame.display.update()
+    
+    return bg_y
 
 #def display_character_selection(WIN, BG, bg_y):
     # Create font for title
@@ -136,8 +364,8 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
 
 # Function to display the pause screen with transparency
 def display_pause_screen(WIN):
-    BUTTON_WIDTH = 200
-    BUTTON_HEIGHT = 80
+    BUTTON_WIDTH = 230
+    BUTTON_HEIGHT = 50
    
     EXIT_BUTTON_IMAGE = pygame.image.load("assets/Exit_Button.png")
     EXIT_BUTTON_IMAGE = pygame.transform.scale(EXIT_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
@@ -146,16 +374,16 @@ def display_pause_screen(WIN):
     PAUSE_BG = pygame.image.load("assets/backgroundspaceview.jpg")  # Create this image
     PAUSE_BG = pygame.transform.scale(PAUSE_BG, (WIDTH, HEIGHT))
    
-    font = pygame.font.SysFont('Arial', 60)
-    pause_text = font.render("PAUSED", True, (255, 0, 0))
+    font = pygame.font.SysFont('Arial', 48)
+    pause_text = font.render("PAUSED", True, (255, 255, 255))
 
   
     continue_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 , BUTTON_WIDTH, BUTTON_HEIGHT)
-    exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 90, BUTTON_WIDTH, BUTTON_HEIGHT)
+    exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 70, BUTTON_WIDTH, BUTTON_HEIGHT)
     
     # Draw the background image instead of using a transparent overlay
     WIN.blit(PAUSE_BG, (0, 0))
-    WIN.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 3))
+    WIN.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2 + 3 , 10))
 
     # Draw continue button
     pygame.draw.rect(WIN, (0, 255, 0), continue_button)
@@ -177,30 +405,43 @@ def display_pause_screen(WIN):
 
 # Game Over Display
 def display_game_over(WIN, score, cursor_img):
+    # First check if the score is in the top 10
+    current_scores = load_scores()
+    is_top_score = False
+    
+    # If there are fewer than 10 scores, or the score is higher than the lowest top 10 score
+    if len(current_scores) < 10 or (current_scores and score > current_scores[-1][1]):
+        is_top_score = True
+    
+    # If it's a top score and greater than 0, prompt for name immediately
+    if is_top_score and score > 0:
+        display_name_input(WIN, score, cursor_img)
+    
     # Set up fonts
     title_font = pygame.font.SysFont('Arial', 60)
     button_font = pygame.font.SysFont('Arial', 30)
     score_font = pygame.font.SysFont('Arial', 40)
 
-    BUTTON_WIDTH = 200
-    BUTTON_HEIGHT = 80
+    BUTTON_WIDTH = 230
+    BUTTON_HEIGHT = 50
    
     # Load and scale button images
     EXIT_BUTTON_IMAGE = pygame.image.load("assets/Exit_Button.png")
     EXIT_BUTTON_IMAGE = pygame.transform.scale(EXIT_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
 
-    GAMEOVER_BG = pygame.image.load("assets/backgroundspaceview.jpg")  # Create this image
+    GAMEOVER_BG = pygame.image.load("assets/backgroundspaceview2.png")
     GAMEOVER_BG = pygame.transform.scale(GAMEOVER_BG, (WIDTH, HEIGHT))
    
     # Create text surfaces
     game_over_text = title_font.render("GAME OVER", True, (255, 0, 0))
     score_text = score_font.render(f"Score: {score}", True, (255, 255, 255))
     restart_text = button_font.render("Restart", True, (255, 255, 255))
+    
    
     # Create button rectangles
     restart_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
     exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, BUTTON_WIDTH, BUTTON_HEIGHT)
-   
+
    
     # Wait for user input
     waiting = True
@@ -215,6 +456,7 @@ def display_game_over(WIN, score, cursor_img):
                     return "restart"
                 elif exit_button.collidepoint(mouse_pos):
                     return "exit"
+
        
         # Update cursor position
         cursor_rect = cursor_img.get_rect()
@@ -227,21 +469,24 @@ def display_game_over(WIN, score, cursor_img):
         # 2. Draw all text elements
         WIN.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - 150))
         WIN.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 2 - 50))
-       
+        
         # 3. Draw restart button
         pygame.draw.rect(WIN, (50, 50, 50), restart_button)
         pygame.draw.rect(WIN, (100, 100, 100), restart_button, 3)  # Button border
         WIN.blit(restart_text, (restart_button.centerx - restart_text.get_width() // 2,
                                restart_button.centery - restart_text.get_height() // 2))
-        
+       
         # 4. Draw exit button
         WIN.blit(EXIT_BUTTON_IMAGE, (exit_button.x, exit_button.y))
-       
+        
+
         # 5. Draw cursor last
         WIN.blit(cursor_img, cursor_rect)
-        
+       
         # 6. Update display
         pygame.display.update()
+
+
 
 
 

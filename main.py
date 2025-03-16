@@ -85,7 +85,7 @@ def main():
     pygame.mouse.set_visible(False)
     game_time = 0
     last_update = pygame.time.get_ticks()
-
+    gameplay_started = False
     
     global gamelevel
     gamelevel = 1
@@ -119,7 +119,7 @@ def main():
     game_paused = False
     map_speed = settings.BG_SCROLL_SPEED
    
-    play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
+    play_button, difficulty_button, exit_button,leaderboard_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
     # Wait for player to click play button to start
     
     game_started = False
@@ -131,11 +131,18 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.collidepoint(event.pos):  # Check if the play button was clicked
                     game_started = True  # Proceed to game loop after clicking play
+                    gameplay_started = True
+                    last_update = pygame.time.get_ticks()
                     game_paused = False  # Ensure it's not paused when game starts
                     settings.play_game_music()
                 elif difficulty_button.collidepoint(event.pos):
                     # Add difficulty selection logic here
                     pass
+                elif leaderboard_button.collidepoint(event.pos):
+                    # Show the leaderboard screen
+                    bg_y = display_leaderboard(WIN, bg_y, cursor_img)
+                    # Redraw the title screen when returning from leaderboard
+                    play_button, difficulty_button, leaderboard_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
                 elif exit_button.collidepoint(event.pos):
                     run = False
                     game_started = True
@@ -146,7 +153,7 @@ def main():
         if bg_y >= HEIGHT:  # Reset background when it scrolls off the screen
             bg_y = 0
         # Redraw the title screen with updated background position
-        play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
+        play_button, difficulty_button,leaderboard_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
 
         # Refresh the screen after drawing the title screen with updated bg_y
         pygame.display.update()
@@ -168,8 +175,6 @@ def main():
         #print(f"Game Time: {game_time:.1f}")
                 
        
-       
-       
         if score >= 300 * (gamelevel) and score != previous_score:
             gamelevel += 1
             previous_score = score  # Update the previous score to prevent continuous level increase
@@ -188,10 +193,10 @@ def main():
             enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
 
         # Spawn the boss after 10 seconds
-        if game_time >= 20 and not boss1_spawned and game_started == True:
+        if game_time >= 20 and not boss1_spawned and gameplay_started:
             boss1_spawned = True
-            boss = Boss1(WIDTH // 2 - BOSS_WIDTH // 2, -300)  # Initialize the boss
-            print("Boss spawned!")  # Debugging: Confirm boss spawn
+            boss = Boss1(WIDTH // 2 - BOSS_WIDTH // 2, -300)
+            print("Boss spawned!")
 
         if boss1_spawned and boss is not None:
             boss.move()  # Move the boss if it has been spawned
@@ -201,8 +206,13 @@ def main():
 
         # Only toggle pause when the ESC key is first pressed
         if keys[pygame.K_ESCAPE] and not prev_esc_state:
-            game_paused = not game_paused  # Toggle pause state
-            prev_esc_state = True  # Set the previous ESC state to True when pressed
+            game_paused = not game_paused  
+            prev_esc_state = True  
+
+            if game_paused:
+                pygame.mixer.music.pause()  
+            else:
+                pygame.mixer.music.unpause()
 
         # Reset prev_esc_state when ESC is released
         if not keys[pygame.K_ESCAPE]:
@@ -231,6 +241,7 @@ def main():
 
             # Replace the current game over handling in main():
             if not player.is_alive():
+                pygame.mixer.music.stop()
                 action = display_game_over(WIN, score, cursor_img)
                 if action == "restart":
                     # Reset game state
@@ -251,12 +262,17 @@ def main():
                     singlefire = True
                     current_bullet_interval = settings.BULLET_INTERVAL
                     map_speed = settings.BG_SCROLL_SPEED
+                    last_update = pygame.time.get_ticks()  # Reset the timer reference point
+                    gameplay_started = True  # Keep gameplay started flag true for restart
+                    settings.play_game_music()
                     continue  # Skip to next iteration with reset game
                 else:  # "exit"
-                    # Return to title screen instead of exiting the game
-                    bg_y = 0  # Reset background position
+                    # Return to title screen 
+                    bg_y = 0  
                     game_started = False
-                    # Stop game music and play title screen music if you have any
+                    gameplay_started = False  
+                    boss1_spawned = False
+
                     pygame.mixer.music.stop()
                     
                     # Display title screen and wait for player input
@@ -289,9 +305,17 @@ def main():
                                     singlefire = True
                                     current_bullet_interval = settings.BULLET_INTERVAL
                                     map_speed = settings.BG_SCROLL_SPEED
+                                    last_update = pygame.time.get_ticks()  # Reset the timer reference point
+                                    settings.play_game_music()
                                 elif difficulty_button.collidepoint(event.pos):
                                     # Add difficulty selection logic here
                                     pass
+
+                                elif leaderboard_button.collidepoint(event.pos):
+                                    # Show the leaderboard screen
+                                    bg_y = display_leaderboard(WIN, bg_y, cursor_img)
+                                    # Redraw the title screen when returning from leaderboard
+                                    play_button, difficulty_button, leaderboard_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
                                 elif exit_button.collidepoint(event.pos):
                                     run = False
                                     game_started = True
@@ -301,7 +325,7 @@ def main():
                         if bg_y >= HEIGHT:  # Reset background when it scrolls off the screen
                             bg_y = 0
                         # Redraw the title screen with updated background position
-                        play_button, difficulty_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
+                        play_button, difficulty_button, leaderboard_button, exit_button, bg_y = display_title_screen(WIN, BG, bg_y, cursor_img)
 
                         # Refresh the screen after drawing the title screen with updated bg_y
                         pygame.display.update()
