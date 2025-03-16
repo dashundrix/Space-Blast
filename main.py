@@ -212,6 +212,34 @@ def main():
 
         if boss1_spawned and boss is not None:
             boss.move()  # Move the boss if it has been spawned
+            for bullet in bullets[:]:
+                if boss.rect.colliderect(bullet.rect):
+                    # Apply damage based on bullet power
+                    boss.take_damage(bullet.power)
+                    bullets.remove(bullet)
+            
+                    # Check if boss is defeated
+                    if boss.health <= 0:
+                        explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
+                        boss = None
+                        boss1_spawned = False
+                        score += 100  # Bonus points for defeating boss
+                        break
+            
+            # Check collision with dual bullets
+            for dual_bullet in dual_bullets[:]:
+                if boss.rect.colliderect(dual_bullet.rect_left) or boss.rect.colliderect(dual_bullet.rect_right):
+                    # Apply damage based on dual bullet power
+                    boss.take_damage(dual_bullet.power)
+                    dual_bullets.remove(dual_bullet)
+                    
+                    # Check if boss is defeated
+                    if boss.health <= 0:
+                        explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
+                        boss = None
+                        boss1_spawned = False
+                        score += 100  # Bonus points for defeating boss
+                        break
         
         # Pause handling (toggle pause on ESC press)
         keys = pygame.key.get_pressed()
@@ -240,6 +268,7 @@ def main():
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if continue_button.collidepoint(event.pos):  # Check if Continue button is clicked
+                        pygame.mixer.music.unpause()
                         game_paused = False  # Unpause the game
                     elif exit_button.collidepoint(event.pos):  # Check if Exit button is clicked
                         run = False  # Exit the game
@@ -254,6 +283,7 @@ def main():
             # Replace the current game over handling in main():
             if not player.is_alive():
                 pygame.mixer.music.stop()
+                gameover.play()
                 action = display_game_over(WIN, score, cursor_img)
                 if action == "restart":
                     # Show character selection before restarting
@@ -337,6 +367,8 @@ def main():
                                     current_bullet_interval = settings.BULLET_INTERVAL
                                     map_speed = settings.BG_SCROLL_SPEED
                                     last_update = pygame.time.get_ticks()  # Reset the timer reference point
+                                    game_started = True
+                                    gameplay_started = True
                                     settings.play_game_music()
                                 elif difficulty_button.collidepoint(event.pos):
                                     # Add difficulty selection logic here
@@ -351,7 +383,7 @@ def main():
                                     run = False
                                     game_started = True
                         
-                        # Continuously update the background position to scroll it
+
                         bg_y += 1  # Increase the vertical position for scrolling effect
                         if bg_y >= HEIGHT:  # Reset background when it scrolls off the screen
                             bg_y = 0

@@ -26,7 +26,7 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
     EXIT_BUTTON_IMAGE = pygame.transform.scale(EXIT_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
 
     LEADERBOARD_BUTTON_IMAGE = pygame.image.load("assets/LEADERBOARD_BUTTON.png")
-    LEADERBOARD_BUTTON_IMAGE = pygame.transform.scale(LEADERBOARD_BUTTON_IMAGE, (128 , 128))
+    LEADERBOARD_BUTTON_IMAGE = pygame.transform.scale(LEADERBOARD_BUTTON_IMAGE, (96 , 96))
 
     # Get frame width from the sprite sheet automatically
     frame_width = PLAY_BUTTON_IMAGE.get_width() // 4
@@ -67,8 +67,8 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
     WIN.blit(DIFFICULTY_BUTTON_IMAGE, (difficulty_button.x, difficulty_button.y))
     WIN.blit(LEADERBOARD_BUTTON_IMAGE, (leaderboard_button.x, leaderboard_button.y)) 
     leaderboard_text = pygame.font.SysFont('Arial', 25).render("Leaderboard", True, (255, 255, 255))
-    WIN.blit(leaderboard_text, (leaderboard_button.x + 64 - leaderboard_text.get_width()//2, 
-                               leaderboard_button.y + 64 - leaderboard_text.get_height()//2))
+    WIN.blit(leaderboard_text, (leaderboard_button.x + 48 - leaderboard_text.get_width()//2, 
+                               leaderboard_button.y + 48 - leaderboard_text.get_height()//2 + 60))
     WIN.blit(EXIT_BUTTON_IMAGE, (exit_button.x, exit_button.y))
     WIN.blit(REYES_LOGO, (reyes_logo.x, reyes_logo.y))
     
@@ -93,21 +93,21 @@ def display_character_selection(WIN, bg_y, cursor_img):
             "id": 1,
             "name": "Falcon",
             "frames": PLAYER_FRAMES,  # Use your existing animation frames
-            "stats": "Speed: ★★★☆☆\nPower: ★★☆☆☆",
+            "stats": "Speed: [ I I I . . ]\nPower: [ I I . . . ]\nHealth: [ I I I I . ]",
             "description": "Balanced fighter with good maneuverability"
         },
         {
             "id": 2,
             "name": "Destroyer",
             "frames": PLAYER_FRAMES,  # For now using same frames, you can replace with new ones
-            "stats": "Speed: ★★☆☆☆\nPower: ★★★★☆",
+            "stats": "Speed: [ I I . . . ]\nPower: [ I I I I . ]\nHealth: [ I I I I I ]",
             "description": "Heavy fighter with powerful weapons"
         },
         {
             "id": 3,
             "name": "Phantom",
             "frames": PLAYER_FRAMES,  # For now using same frames, you can replace with new ones
-            "stats": "Speed: ★★★★☆\nPower: ★★★☆☆",
+            "stats": "Speed: [ I I I I . ]\nPower: [ I I I . . ]\nHealth: [ I I . . . ]",
             "description": "Fast scout ship with rapid-fire weapons"
         }
     ]
@@ -119,7 +119,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
     
     # Create ship selection buttons
     ship_spacing = 300
-    start_x = WIDTH // 2 - (ship_spacing * 3) // 2 + ship_spacing // 2
+    start_x = WIDTH // 2 - (ship_spacing * 3) // 2 + ship_spacing // 2 - 60
     
     ship_rects = [
         pygame.Rect(start_x, HEIGHT // 2 - 100, PLAYER_WIDTH, PLAYER_HEIGHT),
@@ -457,6 +457,7 @@ def display_leaderboard(WIN, bg_y, cursor_img):
 
 # Function to display the pause screen with transparency
 def display_pause_screen(WIN):
+    gameover.play()
     BUTTON_WIDTH = 230
     BUTTON_HEIGHT = 50
    
@@ -503,7 +504,7 @@ def display_game_over(WIN, score, cursor_img):
     is_top_score = False
     
     # If there are fewer than 10 scores, or the score is higher than the lowest top 10 score
-    if len(current_scores) < 10 or (current_scores and score > current_scores[-1][1]):
+    if len(current_scores) < 9 or (current_scores and score > current_scores[-1][1]):
         is_top_score = True
     
     # If it's a top score and greater than 0, prompt for name immediately

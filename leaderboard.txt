@@ -1,6 +1,5 @@
 
 SEAN,760
-
 legendaryplayer,520
 hello world india is,930
 yahhhhhhhhhhhhhhhhhhhhhhh,470
@@ -8,3 +7,8 @@ hrllo,220
 aaa,340
 balo,400
 BBB,390
+
+Nooo,590
+nothing,350
+<+,380
+bli,470

@@ -218,7 +218,8 @@ class Boss1:
         self.animation_speed = 6
         self.frame_counter = 0
         self.image = self.frames[self.frame_index]
-        self.health = 100
+        self.health = 500
+        self.max_health = 500
         self.movement_pattern = 0
         self.shoot_timer = 0
         self.shoot_delay = 1000
@@ -287,6 +288,30 @@ class Boss1:
 
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))
+
+            # Draw health bar above the boss
+        health_bar_width = BOSS_WIDTH
+        health_bar_height = 10  # Small height as requested
+        health_bar_x = self.rect.x
+        health_bar_y = self.rect.y - 15  # Position above the boss
+        
+        # Draw background (empty health)
+        pygame.draw.rect(WIN, (169, 169, 169), (health_bar_x, health_bar_y, health_bar_width, health_bar_height))
+        
+        # Draw filled portion based on current health
+        health_percentage = self.health / self.max_health  # Assuming max health is 100
+        current_health_width = health_percentage * health_bar_width
+        
+        # Color changes from green to yellow to red as health decreases
+        if health_percentage > 0.6:
+            health_color = (0, 255, 0)  # Green
+        elif health_percentage > 0.3:
+            health_color = (255, 255, 0)  # Yellow
+        else:
+            health_color = (255, 0, 0)  # Red
+            
+        pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height))
+
 
 # Asteroid Class
 class Asteroid:
