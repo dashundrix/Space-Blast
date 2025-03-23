@@ -54,6 +54,18 @@ PLAYER_SPRITE_SHEETS = {
     "down-right": "assets/SPACESHIP1_RIGHT.png",  
 }
 
+PLAYER_SPRITE_SHEETS2 = {
+    "idle": "assets/Spaceship2.png",
+    "up": "assets/Spaceship2 Forward.png",
+    "right": "assets/Spaceship2 RIGHT.png",
+    "left": "assets/Spaceship2 LEFT.png",
+    "down": "assets/Spaceship2.png",
+    "up-left": "assets/Spaceship2 LEFT.png",  
+    "up-right": "assets/Spaceship2 RIGHT.png",  
+    "down-left": "assets/Spaceship2 LEFT.png",  
+    "down-right": "assets/Spaceship2 RIGHT.png",  
+}
+
 PLAYERBULLET1_IMAGE_SHEET = pygame.image.load("assets/Bullet 1.png")
 PLAYERBULLET2_IMAGE_SHEET = pygame.image.load("assets/Dual_Bullet.png")
 
@@ -70,6 +82,18 @@ PLAYER_FRAME_COUNT = {
     "down-right": 6,
 }
 
+PLAYER_FRAME_COUNT2 = {
+    "idle": 15,
+    "up": 10,
+    "right": 6,
+    "left": 6,
+    "down": 15,
+    "up-left": 6, 
+    "up-right": 6,
+    "down-left": 6,
+    "down-right": 6,
+}
+
 PLAYER_FRAMES = {}
 for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS.items():
     sprite_sheet = pygame.image.load(sprite_sheet_path)
@@ -79,6 +103,22 @@ for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS.items():
 
     # Extract and scale frames
     PLAYER_FRAMES[direction] = [
+        pygame.transform.scale(
+            sprite_sheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height)),
+            (PLAYER_WIDTH, PLAYER_HEIGHT),
+        )
+        for i in range(frame_count)
+    ]
+
+PLAYER_FRAMES2 = {}
+for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS2.items():
+    sprite_sheet = pygame.image.load(sprite_sheet_path)
+    frame_count = PLAYER_FRAME_COUNT2[direction]
+    frame_width = sprite_sheet.get_width() // frame_count
+    frame_height = sprite_sheet.get_height()
+
+    # Extract and scale frames
+    PLAYER_FRAMES2[direction] = [
         pygame.transform.scale(
             sprite_sheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height)),
             (PLAYER_WIDTH, PLAYER_HEIGHT),

@@ -11,8 +11,13 @@ class Player:
         self.ship_type = ship_type
         self.rect = pygame.Rect(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)
         
-        # Use the same frames for now, but you can add different frames for each ship type
-        self.frames = PLAYER_FRAMES
+        # Use different frames based on ship type
+        if ship_type == 1:  # Falcon
+            self.frames = PLAYER_FRAMES
+        elif ship_type == 2:  # Destroyer
+            self.frames = PLAYER_FRAMES2
+        else:  # Phantom or default
+            self.frames = PLAYER_FRAMES
         
         self.direction = "idle"
         self.frame_index = 0
@@ -323,9 +328,13 @@ class Asteroid:
         self.frame_counter = 0
         self.rect = pygame.Rect(x, y, ASTEROID_WIDTH, ASTEROID_HEIGHT)
         self.image = self.frames[self.frame_index]
+        self.horizontal_direction = random.choice([-1, -0.5, 0, 0.5, 1])
+        self.horizontal_speed = random.uniform(1, 3)
 
     def move(self):
         self.rect.y += ASTEROID_SPEED
+        self.rect.x += self.horizontal_direction * self.horizontal_speed
+        
         self.frame_counter += 1
         if self.frame_counter >= self.animation_speed:
             self.frame_index = (self.frame_index + 1) % len(self.frames)
@@ -414,9 +423,12 @@ class PowerUpDualGun:
         self.animation_speed = 5
         self.frame_counter = 0
         self.image = self.frames[self.frame_index]
+        self.horizontal_direction = random.choice([-0.5, -0.2, 0, 0.2, 0.5])
+        self.horizontal_speed = random.uniform(1, 3)
     
     def move(self):
         self.rect.y += POWERUP_SPEED
+        self.rect.x += self.horizontal_direction * self.horizontal_speed
         self.frame_counter += 1
         if self.frame_counter >= self.animation_speed:
             self.frame_index = (self.frame_index + 1) % len(self.frames)  # Wrap around the index

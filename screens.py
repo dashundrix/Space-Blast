@@ -99,7 +99,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
         {
             "id": 2,
             "name": "Destroyer",
-            "frames": PLAYER_FRAMES,  # For now using same frames, you can replace with new ones
+            "frames": PLAYER_FRAMES2,  # For now using same frames, you can replace with new ones
             "stats": "Speed: [ I I . . . ]\nPower: [ I I I I . ]\nHealth: [ I I I I I ]",
             "description": "Heavy fighter with powerful weapons"
         },

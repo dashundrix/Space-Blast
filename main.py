@@ -103,12 +103,14 @@ def main():
     previous_score = 0
     score = 0
     boss1_spawned = False
+    boss1_defeated = False  
+    boss1_spawned_for_level = 0
 
     powerup1_interval = 5000
     last_bullet_time = 0
     last_dual_bullet_time = 0
     last_powerup1_time = 0
-    current_bullet_interval = settings.BULLET_INTERVAL
+    current_bullet_interval = settings.BULLET_INTERVAL 
     
     dualfire_end_time = 0
 
@@ -205,8 +207,9 @@ def main():
             enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
 
         # Spawn the boss after 10 seconds
-        if game_time >= 20 and not boss1_spawned and gameplay_started:
+        if game_time >= 20 and not boss1_spawned and not boss1_defeated and gameplay_started:
             boss1_spawned = True
+            boss1_spawned_for_level = gamelevel
             boss = Boss1(WIDTH // 2 - BOSS_WIDTH // 2, -300)
             print("Boss spawned!")
 
@@ -220,9 +223,25 @@ def main():
             
                     # Check if boss is defeated
                     if boss.health <= 0:
+                        # Create multiple explosions scattered across the boss's body
+                        for _ in range(10):  # Create 10 explosions
+                            # Random positions within the boss's rectangle
+                            offset_x = random.randint(-boss.rect.width//2, boss.rect.width//2)
+                            offset_y = random.randint(-boss.rect.height//2, boss.rect.height//2)
+                            
+                            # Create explosion at the random offset from boss center
+                            explosions.append(Explosion(
+                                boss.rect.centerx + offset_x, 
+                                boss.rect.centery + offset_y
+                            ))
+                        
+                        # Add a few larger explosions at the center for emphasis
                         explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
+                        explosions.append(Explosion(boss.rect.centerx, boss.rect.centery))
+                        explosions.append(Explosion(boss.rect.centerx + 30, boss.rect.centery + 30))
                         boss = None
                         boss1_spawned = False
+                        boss1_defeated = True
                         score += 100  # Bonus points for defeating boss
                         break
             
@@ -235,9 +254,25 @@ def main():
                     
                     # Check if boss is defeated
                     if boss.health <= 0:
+                        # Create multiple explosions scattered across the boss's body
+                        for _ in range(10):  # Create 10 explosions
+                            # Random positions within the boss's rectangle
+                            offset_x = random.randint(-boss.rect.width//2, boss.rect.width//2)
+                            offset_y = random.randint(-boss.rect.height//2, boss.rect.height//2)
+                            
+                            # Create explosion at the random offset from boss center
+                            explosions.append(Explosion(
+                                boss.rect.centerx + offset_x, 
+                                boss.rect.centery + offset_y
+                            ))
+                        
+                        # Add a few larger explosions at the center for emphasis
                         explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
+                        explosions.append(Explosion(boss.rect.centerx, boss.rect.centery))
+                        explosions.append(Explosion(boss.rect.centerx + 30, boss.rect.centery + 30))
                         boss = None
                         boss1_spawned = False
+                        boss1_defeated = True
                         score += 100  # Bonus points for defeating boss
                         break
         
@@ -315,6 +350,8 @@ def main():
                     gamelevel = 1
                     game_time = 0
                     boss1_spawned = False
+                    boss1_defeated = False  
+                    boss1_spawned_for_level = 0
                     dualfire = False
                     singlefire = True
                     current_bullet_interval = settings.BULLET_INTERVAL
@@ -362,6 +399,8 @@ def main():
                                     gamelevel = 1
                                     game_time = 0
                                     boss1_spawned = False
+                                    boss1_defeated = False  
+                                    boss1_spawned_for_level = 0
                                     dualfire = False
                                     singlefire = True
                                     current_bullet_interval = settings.BULLET_INTERVAL
