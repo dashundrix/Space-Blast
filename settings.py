@@ -38,6 +38,7 @@ pygame.mixer.init()
 shoot_sound_player = pygame.mixer.Sound("assets/shoot_player.wav")  # Ensure this path is correct
 shoot_sound_enemy = pygame.mixer.Sound("assets/shoot_enemy.wav")  # Ensure this path is correct
 shoot_sound_boss = pygame.mixer.Sound("assets/BossBulletSound.mp3")  # Ensure this path is correct
+power_up_sound = pygame.mixer.Sound("assets/PowerUp.mp3")  # Ensure this path is correct
 
 gameover= pygame.mixer.Sound("assets/GAME OVER.mp3")  # Ensure this path is correct
 

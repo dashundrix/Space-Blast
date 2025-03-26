@@ -11,6 +11,29 @@ class Player:
     def __init__(self, x, y, ship_type=1):
         self.ship_type = ship_type
         self.rect = pygame.Rect(x, y, PLAYER_WIDTH, PLAYER_HEIGHT)
+        self.active_powerups = {}
+        
+        self.powerup_icon_size = 60
+        self.powerup_icon_spacing = 5
+        self.powerup_icon_base_x = 30
+        self.powerup_icon_y = HEIGHT - 170  # Above health bar
+        
+        self.powerup_icons = {
+            "dualfire": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+                                             (self.powerup_icon_size, self.powerup_icon_size)),
+            "triplefire": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+                                               (self.powerup_icon_size, self.powerup_icon_size)),
+            "rapidfire": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+                                              (self.powerup_icon_size, self.powerup_icon_size)),
+            "health": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+                                           (self.powerup_icon_size, self.powerup_icon_size)),
+            "shield": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+                                           (self.powerup_icon_size, self.powerup_icon_size))
+        }
+        # Shield properties
+        self.shield_active = False
+        self.shield_health = 0
+        self.shield_max_health = 10
         
         # Use different frames based on ship type
         if ship_type == 1:  # Falcon
@@ -117,52 +140,32 @@ class Player:
         # Update current frame with bounds check
         self.frame_index = min(self.frame_index, len(self.frames[self.direction]) - 1)
         self.image = self.frames[self.direction][self.frame_index]
-        
-    def draw(self, WIN):
-        # Draw the player ship
-        WIN.blit(self.image, (self.rect.x, self.rect.y))
-        
-        # Draw health bar background
-        pygame.draw.rect(WIN, (169, 169, 169), (self.health_bar_x, self.health_bar_y, 
-                                               self.health_bar_width, self.health_bar_height), border_radius=7)
-        
-        # Calculate health percentage and current width
-        health_percentage = self.lives / self.max_lives
-        current_health_width = health_percentage * self.health_bar_width
-        
-        # Determine health bar color based on percentage
-        health_color = (0, 255, 0) if health_percentage > 0.3 else (255, 0, 0)
-        
-        # Draw the filled portion of the health bar
-        pygame.draw.rect(WIN, health_color, (self.health_bar_x, self.health_bar_y, 
-                                            current_health_width, self.health_bar_height), border_radius=7)
-        
-        # Add health text
-        health_text = pygame.font.SysFont('Arial', 18).render(f"HP: {int(self.lives)}/{self.max_lives}", 
-                                                             True, (255, 255, 255))
-        WIN.blit(health_text, (self.health_bar_x + 10, self.health_bar_y + 5))
-        
-        # Draw powerup duration bar if a powerup is active
+
+    def activate_powerup(self, powerup_type, duration):
+        """Activate a power-up for the specified duration"""
         current_time = pygame.time.get_ticks()
-        if self.powerup_active and current_time < self.powerup_end_time:
-            # Calculate remaining time percentage
-            total_duration = self.powerup_end_time - self.powerup_start_time
-            remaining_time = self.powerup_end_time - current_time
-            time_percentage = remaining_time / total_duration
-            
-            # Draw powerup bar background
-            pygame.draw.rect(WIN, (50, 50, 150), (self.powerup_bar_x, self.powerup_bar_y, 
-                                                 self.powerup_bar_width, self.powerup_bar_height), border_radius=7)
-            
-            # Draw remaining time
-            current_powerup_width = time_percentage * self.powerup_bar_width
-            pygame.draw.rect(WIN, (0, 100, 255), (self.powerup_bar_x, self.powerup_bar_y, 
-                                                 current_powerup_width, self.powerup_bar_height), border_radius=7)
-            
-            # Add powerup text
-            #powerup_text = pygame.font.SysFont('Arial', 14).render(f"Power Up: {int(remaining_time/1000)}s", 
-                                                                 #True, (255, 255, 255))
-            #WIN.blit(powerup_text, (self.powerup_bar_x + 10, self.powerup_bar_y - 15))
+        self.active_powerups[powerup_type] = current_time + duration
+        
+        # Special handling for shield
+        if powerup_type == "shield":
+            self.shield_active = True
+            self.shield_health = self.shield_max_health
+    
+    def update_powerups(self):
+        """Update power-up status and return expired ones"""
+        current_time = pygame.time.get_ticks()
+        expired_powerups = []
+        
+        for powerup_type, end_time in list(self.active_powerups.items()):
+            if current_time > end_time:
+                expired_powerups.append(powerup_type)
+                del self.active_powerups[powerup_type]
+                
+                # Special handling for shield expiration
+                if powerup_type == "shield":
+                    self.shield_active = False
+        
+        return expired_powerups
 
     def lose_life(self):
         self.lives -= 0.4
@@ -170,22 +173,88 @@ class Player:
     def is_alive(self):
         return self.lives > 0
         
-    def activate_powerup(self, powerup_type, duration=POWERUP1_DURATION):
-        """Activate a powerup for the specified duration"""
-        self.powerup_active = True
-        self.powerup_type = powerup_type
-        self.powerup_start_time = pygame.time.get_ticks()
-        self.powerup_end_time = self.powerup_start_time + duration
+    def draw(self, WIN):
+        # Draw the player ship
+        WIN.blit(self.image, (self.rect.x, self.rect.y))
         
-    def update_powerups(self):
-        """Check if powerups have expired"""
-        current_time = pygame.time.get_ticks()
-        if self.powerup_active and current_time >= self.powerup_end_time:
-            self.powerup_active = False
-            self.powerup_type = None
-            return False  # Powerup expired
-        return self.powerup_active  # Return if powerup is still active
+        # Draw shield if active
+        if self.shield_active:
+            # Draw shield around player
+            shield_color = (0, 100, 255, 128)  # Blue with transparency
+            shield_radius = max(self.rect.width, self.rect.height) // 2 + 10
+            shield_surface = pygame.Surface((shield_radius*2, shield_radius*2), pygame.SRCALPHA)
+            pygame.draw.circle(shield_surface, shield_color, (shield_radius, shield_radius), shield_radius)
+            WIN.blit(shield_surface, (self.rect.centerx - shield_radius, self.rect.centery - shield_radius))
+        
+        # Draw health bar background
+        health_bar_width = 300
+        health_bar_height = 30
+        health_bar_x = 30
+        health_bar_y = HEIGHT - 100
+        
+        pygame.draw.rect(WIN, (169, 169, 169), (health_bar_x, health_bar_y, health_bar_width, health_bar_height) , border_radius=7 )
+        pygame.draw.rect(WIN, ("gray"), (self.powerup_bar_x, self.powerup_bar_y, 
+                                    self.powerup_bar_width, self.powerup_bar_height), border_radius=7)
+        
+        max_remaining = 0
+        max_duration = POWERUP1_DURATION
 
+        if self.active_powerups:
+            current_time = pygame.time.get_ticks()
+
+        
+        for powerup_type, end_time in self.active_powerups.items():
+            remaining = max(0, end_time - current_time)
+            if remaining > max_remaining:
+                max_remaining = remaining
+        # Calculate health percentage and current width
+        health_percentage = self.lives / self.max_lives
+        current_health_width = health_percentage * health_bar_width
+        
+                # Calculate the width based on remaining time
+        remaining_ratio = max_remaining / max_duration
+        current_powerup_width = remaining_ratio * self.powerup_bar_width
+        
+        # Draw the filled portion of the powerup bar
+        pygame.draw.rect(WIN, (0, 100, 255), (self.powerup_bar_x, self.powerup_bar_y, 
+                                            current_powerup_width, self.powerup_bar_height), border_radius=7)
+        # Determine health bar color based on percentage
+        health_color = (0, 255, 0) if health_percentage > 0.3 else (255, 0, 0)
+        
+        # Draw the filled portion of the health bar
+        pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height) ,border_radius=7)
+        
+        # Add health text
+        health_text = pygame.font.SysFont('Arial', 18).render(f"HP: {int(self.lives)}/{self.max_lives}", 
+                                                             True, (255, 255, 255))
+        WIN.blit(health_text, (health_bar_x + 10, health_bar_y + 5))
+        
+        # Draw power-up icons
+        current_time = pygame.time.get_ticks()
+        x_offset = 0
+        
+        for powerup_type, end_time in self.active_powerups.items():
+            # Calculate remaining time
+            remaining_time = max(0, end_time - current_time)
+            remaining_seconds = int(remaining_time / 1000)
+            
+            # Draw icon background (darker when about to expire)
+            icon_bg_color = (50, 50, 100) if remaining_seconds > 3 else (150, 50, 50)
+            pygame.draw.rect(WIN, icon_bg_color, 
+                           (self.powerup_icon_base_x + x_offset, self.powerup_icon_y, 
+                            self.powerup_icon_size, self.powerup_icon_size))
+            
+            # Draw icon
+            WIN.blit(self.powerup_icons[powerup_type], 
+                    (self.powerup_icon_base_x + x_offset, self.powerup_icon_y))
+            
+            # Draw timer text
+            timer_text = pygame.font.SysFont('Arial', 12).render(f"{remaining_seconds}s", True, (255, 255, 255))
+            WIN.blit(timer_text, (self.powerup_icon_base_x + x_offset + 2, 
+                                 self.powerup_icon_y + self.powerup_icon_size - 14))
+            
+            # Move to next icon position
+            x_offset += self.powerup_icon_size + self.powerup_icon_spacing
     
 # Bullet Classes Player
 class Bullet:
@@ -644,3 +713,29 @@ class PowerUpDualGun:
 
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))
+
+class HealingParticle:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.size = random.randint(15, 30)
+        self.color = (0, 255, 0)  # Green
+        self.speed = random.uniform(0.5, 2.0)
+        self.lifetime = 80  # Frames
+        self.age = 0
+    
+    def update(self):
+        self.y -= self.speed  # Move upward
+        self.age += 1
+        # Fade out as it ages
+        alpha = 255 * (1 - (self.age / self.lifetime))
+        self.color = (0, 255, 0, int(alpha))
+        return self.age < self.lifetime
+    
+    def draw(self, WIN):
+        if self.age < self.lifetime:
+            # Create a surface with per-pixel alpha
+            particle_surface = pygame.Surface((self.size, self.size), pygame.SRCALPHA)
+            pygame.draw.circle(particle_surface, self.color, (self.size//2, self.size//2), self.size//2)
+            WIN.blit(particle_surface, (self.x - self.size//2, self.y - self.size//2))
+

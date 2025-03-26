@@ -536,6 +536,7 @@ def display_pause_screen(WIN):
 
     # Draw continue button
     pygame.draw.rect(WIN, (0, 255, 0), continue_button)
+    pygame.draw.rect(WIN, (0, 0, 0), continue_button, 3)
     continue_text = pygame.font.SysFont('Arial', 30).render("Continue", True, (0, 0, 0))
     WIN.blit(continue_text, (continue_button.x + (continue_button.width - continue_text.get_width()) // 2, 
                             continue_button.y + (continue_button.height - continue_text.get_height()) // 2))
@@ -557,26 +558,19 @@ def display_game_over(WIN, score, cursor_img):
     # First check if the score is in the top 10
     current_scores = load_scores()
     is_top_score = False
-    
+   
     # If there are fewer than 10 scores, or the score is higher than the lowest top 10 score
     if len(current_scores) < 9 or (current_scores and score > current_scores[-1][1]):
         is_top_score = True
-    
+   
     # If it's a top score and greater than 0, prompt for name immediately
     if is_top_score and score > 0:
         display_name_input(WIN, score, cursor_img)
-    
+   
     # Set up fonts
     title_font = pygame.font.SysFont('Arial', 60)
     button_font = pygame.font.SysFont('Arial', 30)
     score_font = pygame.font.SysFont('Arial', 40)
-
-    BUTTON_WIDTH = 230
-    BUTTON_HEIGHT = 50
-   
-    # Load and scale button images
-    EXIT_BUTTON_IMAGE = pygame.image.load("assets/Exit_Button.png")
-    EXIT_BUTTON_IMAGE = pygame.transform.scale(EXIT_BUTTON_IMAGE, (BUTTON_WIDTH, BUTTON_HEIGHT))
 
     GAMEOVER_BG = pygame.image.load("assets/backgroundspaceview2.png")
     GAMEOVER_BG = pygame.transform.scale(GAMEOVER_BG, (WIDTH, HEIGHT))
@@ -585,12 +579,12 @@ def display_game_over(WIN, score, cursor_img):
     game_over_text = title_font.render("GAME OVER", True, (255, 0, 0))
     score_text = score_font.render(f"Score: {score}", True, (255, 255, 255))
     restart_text = button_font.render("Restart", True, (255, 255, 255))
-    
+    mainmenu_text = button_font.render("Main Menu", True, (255, 255, 255))
    
-    # Create button rectangles
-    restart_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
-    exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 120, BUTTON_WIDTH, BUTTON_HEIGHT)
-
+    # Create button rectangles - ADJUSTED POSITIONS
+    restart_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 20, 200, 50)
+    main_menu_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 90, 200, 50)
+    exit_button = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 160, 200, 50)
    
     # Wait for user input
     waiting = True
@@ -603,9 +597,11 @@ def display_game_over(WIN, score, cursor_img):
                 mouse_pos = pygame.mouse.get_pos()
                 if restart_button.collidepoint(mouse_pos):
                     return "restart"
+                elif main_menu_button.collidepoint(mouse_pos):
+                    return "exit"  # Use the existing "exit" return value for main menu
                 elif exit_button.collidepoint(mouse_pos):
-                    return "exit"
-
+                    pygame.quit()  # Actually exit the game completely
+                    sys.exit()
        
         # Update cursor position
         cursor_rect = cursor_img.get_rect()
@@ -618,22 +614,32 @@ def display_game_over(WIN, score, cursor_img):
         # 2. Draw all text elements
         WIN.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - 150))
         WIN.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 2 - 50))
-        
+       
         # 3. Draw restart button
         pygame.draw.rect(WIN, (50, 50, 50), restart_button)
         pygame.draw.rect(WIN, (100, 100, 100), restart_button, 3)  # Button border
         WIN.blit(restart_text, (restart_button.centerx - restart_text.get_width() // 2,
                                restart_button.centery - restart_text.get_height() // 2))
        
-        # 4. Draw exit button
-        WIN.blit(EXIT_BUTTON_IMAGE, (exit_button.x, exit_button.y))
-        
+        # 4. Draw main menu button
+        pygame.draw.rect(WIN, (50, 50, 50), main_menu_button)
+        pygame.draw.rect(WIN, (100, 100, 100), main_menu_button, 3)  # Button border
+        WIN.blit(mainmenu_text, (main_menu_button.centerx - mainmenu_text.get_width() // 2,
+                               main_menu_button.centery - mainmenu_text.get_height() // 2))
 
-        # 5. Draw cursor last
+        # 5. Draw exit button
+        pygame.draw.rect(WIN, (50, 50, 50), exit_button)
+        pygame.draw.rect(WIN, (100, 100, 100), exit_button, 3)  # Button border
+        exit_text = button_font.render("Quit Game", True, (255, 255, 255))
+        WIN.blit(exit_text, (exit_button.centerx - exit_text.get_width() // 2,
+                           exit_button.centery - exit_text.get_height() // 2))
+       
+        # 6. Draw cursor last
         WIN.blit(cursor_img, cursor_rect)
        
-        # 6. Update display
+        # 7. Update display
         pygame.display.update()
+
 
 
 

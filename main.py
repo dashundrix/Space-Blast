@@ -10,7 +10,7 @@ from screens import *
 
 # Drawing Function
 def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerups1,
-         enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss, boss1_spawned, boss_bullets):
+         enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss, boss1_spawned, boss_bullets, healing_particles):
 
     WIN.fill((0, 0, 0))
     WIN.blit(settings.CURRENT_BG, (0, bg_y))  
@@ -44,6 +44,11 @@ def draw(WIN, CURRENT_BG, player, enemies, bullets, dual_bullets, powerups1,
         dual_bullet.draw(WIN)
     for powerup1 in powerups1:
         powerup1.draw(WIN)
+    
+    for particle in healing_particles:
+        particle.draw(WIN)
+
+
 
 
     score_text = pygame.font.SysFont('Arial', 50).render(f"{score}", True, (255, 255, 255))
@@ -76,7 +81,8 @@ def main():
     asteroids = []
     explosions = []
     powerups1 = []
-   
+    expired_powerups = []
+    healing_particles = []
     previous_score = 0
     score = 0
     boss1_spawned = False
@@ -442,6 +448,8 @@ def main():
                     asteroids = []
                     explosions = []
                     powerups1 = []
+                    expired_powerups = []
+                    healing_particles = []
                     score = 0
                     gamelevel = 1
                     game_time = 0
@@ -583,6 +591,8 @@ def main():
                                     asteroids = []
                                     explosions = []
                                     powerups1 = []
+                                    expired_powerups = []
+                                    healing_particles = []
                                     score = 0
                                     gamelevel = 1
                                     game_time = 0
@@ -735,31 +745,49 @@ def main():
         for powerup1 in powerups1[:]:
             powerup1.move()
             if powerup1.rect.colliderect(player.rect):  # Player collects power-up
-                random_effect = random.randint(1, 4)
-               
+                power_up_sound.play()
+                random_effect = random.randint(1,5)
+
                 if random_effect == 1:
                     dualfire = True
                     singlefire = False
+                    dualfire_end_time = current_time + POWERUP1_DURATION
+                    player.activate_powerup("dualfire", POWERUP1_DURATION)
                     print("Dual Machingun")
                 elif random_effect == 2:
                     dualfire = True
                     singlefire = True
+                    dualfire_end_time = current_time + POWERUP1_DURATION
+                    player.activate_powerup("triplefire", POWERUP1_DURATION)
                     print("Triple Machingun")
                 elif random_effect == 3:
                     current_bullet_interval = 130  # Set the current interval directly
                     settings.BULLET_INTERVAL = 130  # Keep settings in sync
+                    player.activate_powerup("rapidfire", POWERUP1_DURATION)
                     print(f"New BULLET_INTERVAL: {settings.BULLET_INTERVAL}")
                 elif random_effect == 4:
-                  player.lives += 2
+                  player.lives += player.max_lives
                   if player.lives > player.max_lives:
                       player.lives = player.max_lives
-                print("HEALTH +")
-                   
-                dualfire_end_time = current_time + POWERUP1_DURATION  # Set duration
-                player.activate_powerup("dualfire", POWERUP1_DURATION)
+                  player.activate_powerup("health", 2000)
+                  for _ in range(5):  # Create 5 small healing particles
+                        offset_x = random.randint(-20, 20)
+                        offset_y = random.randint(-20, 20)
+                        # You'll need to create a HealingParticle class
+                        healing_particles.append(HealingParticle(
+                            player.rect.centerx + offset_x,
+                            player.rect.centery + offset_y
+                        ))
+                        print("HEALTH +")
+                elif random_effect == 5:
+                    player.activate_powerup("shield", POWERUP1_DURATION)
+                    print("Shield Activated")
+
+
                 powerups1.remove(powerup1)
             elif powerup1.rect.y > HEIGHT:  # Remove off-screen power-ups
                 powerups1.remove(powerup1)
+        
         # Check if dualfire duration has ended
         if dualfire and current_time > dualfire_end_time:
             dualfire = False
@@ -779,6 +807,18 @@ def main():
                 dual_bullets.append(BulletDual(player.rect.x, player.rect.y, player.bullet_power))
                 last_dual_bullet_time = current_time
                 shoot_sound_player.play()
+        
+        expired_powerups = player.update_powerups()
+        for powerup_type in expired_powerups:
+            if powerup_type == "dualfire":
+                dualfire = False
+                singlefire = True
+            elif powerup_type == "triplefire":
+                dualfire = False
+                singlefire = True
+            elif powerup_type == "rapidfire":
+                current_bullet_interval = 200
+                settings.BULLET_INTERVAL = 200
 
         # Move and draw regular bullets
         for bullet in bullets[:]:
@@ -874,7 +914,17 @@ def main():
             if player.rect.colliderect(asteroid.rect):
                 explosions.append(Explosion(player.rect.centerx - 10, player.rect.centery - 10))
                 asteroids.remove(asteroid)
-                player.lose_life()
+                if player.shield_active:
+                    # Reduce shield health instead of player lives
+                    player.shield_health -= 1
+                    
+                    # If shield is depleted, deactivate it
+                    if player.shield_health <= 0:
+                        player.shield_active = False
+                        del player.active_powerups["shield"]
+                else:
+                    # No shield, reduce player lives normally
+                    player.lose_life()
 
         # Move Enemy Bullets
         for enemy_bullet in enemy_bullets[:]:
@@ -883,9 +933,20 @@ def main():
                 enemy_bullets.remove(enemy_bullet)
 
             if player.rect.colliderect(enemy_bullet.rect):
-                player.lose_life()
+                if player.shield_active:
+                    # Reduce shield health instead of player lives
+                    player.shield_health -= 1
+                    
+                    # If shield is depleted, deactivate it
+                    if player.shield_health <= 0:
+                        player.shield_active = False
+                        del player.active_powerups["shield"]
+                else:
+                    # No shield, reduce player lives normally
+                    player.lose_life()
                 explosions.append(Explosion(player.rect.centerx - 10, player.rect.centery - 10))
                 enemy_bullets.remove(enemy_bullet)
+        
         # Update boss bullets
         for bullet in boss_bullets[:]:
             bullet.move()
@@ -893,7 +954,17 @@ def main():
             # Check if bullet hits player
             if bullet.rect.colliderect(player.rect):
                 boss_bullets.remove(bullet)
-                player.lose_life()
+                if player.shield_active:
+                    # Reduce shield health instead of player lives
+                    player.shield_health -= 1
+                    
+                    # If shield is depleted, deactivate it
+                    if player.shield_health <= 0:
+                        player.shield_active = False
+                        del player.active_powerups["shield"]
+                else:
+                    # No shield, reduce player lives normally
+                    player.lose_life()
                 explosions.append(Explosion(bullet.rect.x, bullet.rect.y))
             
             # Remove bullets that go off screen
@@ -904,12 +975,14 @@ def main():
         for explosion in explosions[:]:
             if explosion.is_expired(current_time):
                 explosions.remove(explosion)
-
+        for particle in healing_particles[:]:
+            if not particle.update():
+                healing_particles.remove(particle)
         # Scroll Map background
         bg_y += map_speed
        
         bg_y = draw(WIN, settings.CURRENT_BG, player, enemies, bullets, dual_bullets,
-                    powerups1, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss, boss1_spawned, boss_bullets)
+                    powerups1, enemy_bullets, asteroids, explosions, bg_y, score, gamelevel, boss, boss1_spawned, boss_bullets, healing_particles)
 
     pygame.quit()
 
