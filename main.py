@@ -269,110 +269,111 @@ def main():
     while run:
         clock.tick(60)
 
+
+        last_update = current_time
+        #print(f"Game Time: {game_time:.1f}")
         current_time = pygame.time.get_ticks()
         if not game_paused:
             # Only update game time when not paused
             delta_time = (current_time - last_update) / 1000.0
             game_time += delta_time
-
-        last_update = current_time
-        #print(f"Game Time: {game_time:.1f}")
                
-       
-        if score >= 300 * (gamelevel) and score != previous_score:
-            gamelevel += 1
-            previous_score = score  # Update the previous score to prevent continuous level increase
-            map_speed += 1  # Increase map speed for the new level
 
-           
-            # ///// BACKGROUND CHANGE ///// AnyLogic can apply
-            # Add background changing logic here
-            if True:  
-                settings.CURRENT_BG = settings.BG
-                print("Changed to BG1")
-            else:  # Odd levels
-                settings.CURRENT_BG = settings.BG
-                print("Changed to BG")
-            # Reset and update the enemies list for the new level
-            enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
-
-        # Spawn the boss after 10 seconds
-        if game_time >= 5 and not boss1_spawned and not boss1_defeated and gameplay_started:
-            boss1_spawned = True
-            boss1_spawned_for_level = gamelevel
-            boss = Boss1(WIDTH // 2 - BOSS_WIDTH // 2, -300)
-            print("Boss spawned!")
-
-        if boss1_spawned and boss is not None:
-            boss.move()  # Move the boss if it has been spawned
             
-            # Get new bullets from boss
-            new_boss_bullets = boss.shoot(current_time)
-            if new_boss_bullets:
-                boss_bullets.extend(new_boss_bullets)
-                shoot_sound_boss.play()  # Play sound effect
+            if score >= 300 * (gamelevel) and score != previous_score:
+                gamelevel += 1
+                previous_score = score  # Update the previous score to prevent continuous level increase
+                map_speed += 1  # Increase map speed for the new level
+
             
-            for bullet in bullets[:]:
-                if boss.rect.colliderect(bullet.rect):
-                    # Apply damage based on bullet power
-                    boss.take_damage(bullet.power)
-                    bullets.remove(bullet)
-           
-                    # Check if boss is defeated
-                    if boss.health <= 0:
-                        # Create multiple explosions scattered across the boss's body
-                        for _ in range(10):  # Create 10 explosions
-                            # Random positions within the boss's rectangle
-                            offset_x = random.randint(-boss.rect.width//2, boss.rect.width//2)
-                            offset_y = random.randint(-boss.rect.height//2, boss.rect.height//2)
-                           
-                            # Create explosion at the random offset from boss center
-                            explosions.append(Explosion(
-                                boss.rect.centerx + offset_x,
-                                boss.rect.centery + offset_y
-                            ))
-                       
-                        # Add a few larger explosions at the center for emphasis
-                        explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
-                        explosions.append(Explosion(boss.rect.centerx, boss.rect.centery))
-                        explosions.append(Explosion(boss.rect.centerx + 30, boss.rect.centery + 30))
-                        boss = None
-                        boss1_spawned = False
-                        boss1_defeated = True
-                        score += 300  # Bonus points for defeating boss
-                        break
-           
-            # Check collision with dual bullets
-            for dual_bullet in dual_bullets[:]:
-                if boss.rect.colliderect(dual_bullet.rect_left) or boss.rect.colliderect(dual_bullet.rect_right):
-                    # Apply damage based on dual bullet power
-                    boss.take_damage(dual_bullet.power)
-                    dual_bullets.remove(dual_bullet)
-                   
-                    # Check if boss is defeated
-                    # Check if boss is defeated
-                    if boss.health <= 0:
-                        # Create multiple explosions scattered across the boss's body
-                        for _ in range(10):  # Create 10 explosions
-                            # Random positions within the boss's rectangle
-                            offset_x = random.randint(-boss.rect.width//2, boss.rect.width//2)
-                            offset_y = random.randint(-boss.rect.height//2, boss.rect.height//2)
-                           
-                            # Create explosion at the random offset from boss center
-                            explosions.append(Explosion(
-                                boss.rect.centerx + offset_x,
-                                boss.rect.centery + offset_y
-                            ))
-                       
-                        # Add a few larger explosions at the center for emphasis
-                        explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
-                        explosions.append(Explosion(boss.rect.centerx, boss.rect.centery))
-                        explosions.append(Explosion(boss.rect.centerx + 30, boss.rect.centery + 30))
-                        boss = None
-                        boss1_spawned = False
-                        boss1_defeated = True
-                        score += 100  # Bonus points for defeating boss
-                        break
+                # ///// BACKGROUND CHANGE ///// AnyLogic can apply
+                # Add background changing logic here
+                if True:  
+                    settings.CURRENT_BG = settings.BG
+                    print("Changed to BG1")
+                else:  # Odd levels
+                    settings.CURRENT_BG = settings.BG
+                    print("Changed to BG")
+                # Reset and update the enemies list for the new level
+                enemies = [Enemy(random.randint(0, WIDTH - ENEMY_WIDTH), -100) for _ in range(gamelevel)]
+
+            # Spawn the boss after 10 seconds
+            if game_time >= 45 and not boss1_spawned and not boss1_defeated and gameplay_started:
+                boss1_spawned = True
+                boss1_spawned_for_level = gamelevel
+                boss = Boss1(WIDTH // 2 - BOSS_WIDTH // 2, -300)
+                print("Boss spawned!")
+
+            if boss1_spawned and boss is not None:
+                boss.move()  # Move the boss if it has been spawned
+                
+                # Get new bullets from boss
+                new_boss_bullets = boss.shoot(current_time)
+                if new_boss_bullets:
+                    boss_bullets.extend(new_boss_bullets)
+                    shoot_sound_boss.play()  # Play sound effect
+                
+                for bullet in bullets[:]:
+                    if boss.rect.colliderect(bullet.rect):
+                        # Apply damage based on bullet power
+                        boss.take_damage(bullet.power)
+                        bullets.remove(bullet)
+            
+                        # Check if boss is defeated
+                        if boss.health <= 0:
+                            # Create multiple explosions scattered across the boss's body
+                            for _ in range(10):  # Create 10 explosions
+                                # Random positions within the boss's rectangle
+                                offset_x = random.randint(-boss.rect.width//2, boss.rect.width//2)
+                                offset_y = random.randint(-boss.rect.height//2, boss.rect.height//2)
+                            
+                                # Create explosion at the random offset from boss center
+                                explosions.append(Explosion(
+                                    boss.rect.centerx + offset_x,
+                                    boss.rect.centery + offset_y
+                                ))
+                        
+                            # Add a few larger explosions at the center for emphasis
+                            explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
+                            explosions.append(Explosion(boss.rect.centerx, boss.rect.centery))
+                            explosions.append(Explosion(boss.rect.centerx + 30, boss.rect.centery + 30))
+                            boss = None
+                            boss1_spawned = False
+                            boss1_defeated = True
+                            score += 300  # Bonus points for defeating boss
+                            break
+            
+                # Check collision with dual bullets
+                for dual_bullet in dual_bullets[:]:
+                    if boss.rect.colliderect(dual_bullet.rect_left) or boss.rect.colliderect(dual_bullet.rect_right):
+                        # Apply damage based on dual bullet power
+                        boss.take_damage(dual_bullet.power)
+                        dual_bullets.remove(dual_bullet)
+                    
+                        # Check if boss is defeated
+                        # Check if boss is defeated
+                        if boss.health <= 0:
+                            # Create multiple explosions scattered across the boss's body
+                            for _ in range(10):  # Create 10 explosions
+                                # Random positions within the boss's rectangle
+                                offset_x = random.randint(-boss.rect.width//2, boss.rect.width//2)
+                                offset_y = random.randint(-boss.rect.height//2, boss.rect.height//2)
+                            
+                                # Create explosion at the random offset from boss center
+                                explosions.append(Explosion(
+                                    boss.rect.centerx + offset_x,
+                                    boss.rect.centery + offset_y
+                                ))
+                        
+                            # Add a few larger explosions at the center for emphasis
+                            explosions.append(Explosion(boss.rect.centerx - 30, boss.rect.centery - 30))
+                            explosions.append(Explosion(boss.rect.centerx, boss.rect.centery))
+                            explosions.append(Explosion(boss.rect.centerx + 30, boss.rect.centery + 30))
+                            boss = None
+                            boss1_spawned = False
+                            boss1_defeated = True
+                            score += 100  # Bonus points for defeating boss
+                            break
        
         # Pause handling (toggle pause on ESC press)
         keys = pygame.key.get_pressed()

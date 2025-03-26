@@ -89,26 +89,56 @@ def display_character_selection(WIN, bg_y, cursor_img):
     button_font = pygame.font.SysFont('Arial', 24)
     
     # Load star sprite sheet
-    star_sheet = pygame.image.load("assets/Star.png")  # Load your sprite sheet
+    star_sheet = pygame.image.load("assets/Star.png")
     
     # Extract frames from the sprite sheet
     star_frames = []
-    frame_width = star_sheet.get_width() // 7  # Assuming 7 frames horizontally
+    frame_width = star_sheet.get_width() // 7
     frame_height = star_sheet.get_height()
     
     for i in range(7):
-        # Extract each frame from the sheet
         frame = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA)
         frame.blit(star_sheet, (0, 0), (i * frame_width, 0, frame_width, frame_height))
-        frame = pygame.transform.scale(frame, (20, 20))  # Adjust size as needed
+        frame = pygame.transform.scale(frame, (20, 20))
         star_frames.append(frame)
     
     # Load empty star image
-    empty_star_img = pygame.image.load("assets/Empty Star.png")  # Create this image
+    empty_star_img = pygame.image.load("assets/Empty Star.png")
     empty_star_img = pygame.transform.scale(empty_star_img, (20, 20))
     
+    # Load pilot images
+    pilot_images = [
+        pygame.image.load("assets/Pilot 1.png"),
+        pygame.image.load("assets/Pilot 2.png"),
+        pygame.image.load("assets/Pilot 3.png")
+    ]
+    
+    # Load pilot voice sounds
+    pilot_voices = [
+        pygame.mixer.Sound("assets/Pilot 1 Voice.mp3"),  # Make sure these files exist
+        pygame.mixer.Sound("assets/Pilot 2 Voice.mp3"),
+        pygame.mixer.Sound("assets/Pilot 3 Voice.mp3")
+    ]
+    
+    # Set volume for voice clips
+    for voice in pilot_voices:
+        voice.set_volume(0.7)  # Adjust volume as needed
+    
+    # Scale pilot images to appropriate size (half window height)
+    pilot_height = HEIGHT // 2
+    for i in range(len(pilot_images)):
+        # Calculate width to maintain aspect ratio
+        aspect_ratio = pilot_images[i].get_width() / pilot_images[i].get_height()
+        pilot_width = int(pilot_height * aspect_ratio)
+        pilot_images[i] = pygame.transform.scale(pilot_images[i], (pilot_width, pilot_height))
+    
+    # Pilot animation variables
+    pilot_x = -pilot_images[0].get_width()  # Start off-screen
+    target_pilot_x = 40  # Target position when selected
+    pilot_slide_speed = 20  # Speed of sliding animation
+    
     # Star animation variables
-    star_animation_speed = 8  # Adjust for faster/slower animation
+    star_animation_speed = 8
     star_frame_counter = 0
     star_frame_index = 0
     
@@ -118,11 +148,12 @@ def display_character_selection(WIN, bg_y, cursor_img):
             "name": "Falcon",
             "frames": PLAYER_FRAMES,  
             "stats": {
-                "Speed": 3,  # Out of 5 stars
+                "Speed": 3,
                 "Power": 3,
                 "Health": 4
             },
-            "description": "Balanced fighter with good maneuverability"
+            "description": "Balanced fighter with good maneuverability",
+            "pilot_index": 0  # Index to pilot_images
         },
         {
             "id": 2,
@@ -133,18 +164,20 @@ def display_character_selection(WIN, bg_y, cursor_img):
                 "Power": 4,
                 "Health": 5
             },
-            "description": "Heavy fighter with powerful weapons"
+            "description": "Heavy fighter with powerful weapons",
+            "pilot_index": 1  # Index to pilot_images
         },
         {
             "id": 3,
             "name": "Phantom",
-            "frames": PLAYER_FRAMES3, 
+            "frames": PLAYER_FRAMES3,
             "stats": {
                 "Speed": 5,
                 "Power": 2,
                 "Health": 2
             },
-            "description": "Fast scout ship with rapid-fire weapons"
+            "description": "Fast scout ship with rapid-fire weapons",
+            "pilot_index": 2  # Index to pilot_images
         }
     ]
     
@@ -155,7 +188,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
     
     # Create ship selection buttons
     ship_spacing = 300
-    start_x = WIDTH // 2 - (ship_spacing * 3) // 2 + ship_spacing // 2 - 60
+    start_x = WIDTH // 2 - (ship_spacing * 3) // 2 + ship_spacing // 2 + 60
     
     ship_rects = [
         pygame.Rect(start_x, HEIGHT // 2 - 110, PLAYER_WIDTH, PLAYER_HEIGHT),
@@ -173,6 +206,10 @@ def display_character_selection(WIN, bg_y, cursor_img):
     
     # Track selected ship
     selected_ship = 1  # Default to first ship
+    previous_selected_ship = 1  # To detect changes in selection
+    
+    # Play initial pilot voice
+    pilot_voices[ship_types[selected_ship-1]["pilot_index"]].play()
     
     # Main selection loop
     running = True
@@ -192,7 +229,11 @@ def display_character_selection(WIN, bg_y, cursor_img):
                 # Check if a ship was clicked
                 for i, rect in enumerate(ship_rects):
                     if rect.collidepoint(mouse_pos):
-                        selected_ship = ship_types[i]["id"]
+                        if selected_ship != ship_types[i]["id"]:
+                            selected_ship = ship_types[i]["id"]
+                            # Play the voice of the newly selected pilot
+                            pygame.mixer.stop()  # Stop any currently playing voice
+                            pilot_voices[ship_types[selected_ship-1]["pilot_index"]].play()
                 
                 # Check if back button was clicked
                 if back_button.collidepoint(mouse_pos):
@@ -200,27 +241,52 @@ def display_character_selection(WIN, bg_y, cursor_img):
                 
                 # Check if select button was clicked
                 if select_button.collidepoint(mouse_pos):
+                    # Play confirmation voice before returning
+                    pygame.mixer.stop()
+                    pilot_voices[ship_types[selected_ship-1]["pilot_index"]].play()
+                    pygame.time.delay(500)  # Short delay to let voice start playing
                     return selected_ship  # Return the selected ship ID
+        
+        # Check if selection changed
+        if selected_ship != previous_selected_ship:
+            # Reset pilot position to slide in from left
+            pilot_x = -pilot_images[ship_types[selected_ship-1]["pilot_index"]].get_width()
+            previous_selected_ship = selected_ship
+        
+        # Update pilot position (slide animation)
+        if pilot_x < target_pilot_x:
+            pilot_x += pilot_slide_speed
+            if pilot_x > target_pilot_x:
+                pilot_x = target_pilot_x
         
         # Update background position for scrolling effect
         bg_y += 1
         if bg_y >= HEIGHT:
             bg_y = 0
-            
+        
         # Update star animation
         star_frame_counter += 1
         if star_frame_counter >= star_animation_speed:
             star_frame_index = (star_frame_index + 1) % len(star_frames)
             star_frame_counter = 0
-            
+        
         # Draw everything
         WIN.fill((0, 0, 0))
         WIN.blit(BG, (0, bg_y))
         WIN.blit(BG, (0, bg_y - HEIGHT))
         
         # Draw title
-        title_text = title_font.render("SELECT YOUR SHIP", True, (255, 255, 255))
+        title_text = title_font.render("Select Your Ship", True, (255, 255, 255))
         WIN.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 80))
+        
+        # Draw the selected pilot image
+        current_pilot_index = ship_types[selected_ship-1]["pilot_index"]
+        WIN.blit(pilot_images[current_pilot_index], (pilot_x, HEIGHT // 2 - pilot_height // 2))
+        
+        # Draw pilot name and quote
+        pilot_names = ["Ranger Alex", "Captain Vega", "Lieutenant Nova"]  # Add pilot names
+        pilot_name_text = pygame.font.SysFont('Arial', 24).render(pilot_names[current_pilot_index], True, (255, 220, 0))
+        WIN.blit(pilot_name_text, (pilot_x + 20, HEIGHT // 2 + pilot_height // 2 + 10))
         
         # Draw ships with animations
         for i, ship in enumerate(ship_types):
@@ -241,7 +307,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
             
             # Draw ship name
             name_text = button_font.render(ship["name"], True, (255, 255, 255))
-            WIN.blit(name_text, (ship_rects[i].centerx - name_text.get_width() // 2, 
+            WIN.blit(name_text, (ship_rects[i].centerx - name_text.get_width() // 2,
                                 ship_rects[i].bottom + 10))
             
             # Draw ship stats with animated stars
@@ -265,19 +331,19 @@ def display_character_selection(WIN, bg_y, cursor_img):
             
             # Draw ship description
             desc_text = pygame.font.SysFont('Arial', 16).render(ship["description"], True, (180, 180, 180))
-            WIN.blit(desc_text, (ship_rects[i].centerx - desc_text.get_width() // 2, 
+            WIN.blit(desc_text, (ship_rects[i].centerx - desc_text.get_width() // 2,
                                 ship_rects[i].bottom + 130))
         
         # Draw back button
         pygame.draw.rect(WIN, (80, 80, 80), back_button, border_radius=5)
         pygame.draw.rect(WIN, (150, 150, 150), back_button, 2, border_radius=5)
-        WIN.blit(back_text, (back_button.centerx - back_text.get_width()//2, 
+        WIN.blit(back_text, (back_button.centerx - back_text.get_width()//2,
                             back_button.centery - back_text.get_height()//2))
         
         # Draw select button
         pygame.draw.rect(WIN, (0, 100, 0), select_button, border_radius=5)
         pygame.draw.rect(WIN, (0, 200, 0), select_button, 2, border_radius=5)
-        WIN.blit(select_text, (select_button.centerx - select_text.get_width()//2, 
+        WIN.blit(select_text, (select_button.centerx - select_text.get_width()//2,
                               select_button.centery - select_text.get_height()//2))
         
         # Draw cursor
@@ -288,6 +354,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
         pygame.display.update()
     
     return selected_ship
+
 
 
 
@@ -558,7 +625,7 @@ def display_game_over(WIN, score, cursor_img):
     # First check if the score is in the top 10
     current_scores = load_scores()
     is_top_score = False
-   
+    
     # If there are fewer than 10 scores, or the score is higher than the lowest top 10 score
     if len(current_scores) < 9 or (current_scores and score > current_scores[-1][1]):
         is_top_score = True

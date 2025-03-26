@@ -19,15 +19,15 @@ class Player:
         self.powerup_icon_y = HEIGHT - 170  # Above health bar
         
         self.powerup_icons = {
-            "dualfire": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+            "dualfire": pygame.transform.scale(pygame.image.load("assets/DualGun.png").subsurface((0, 0, 64, 64)), 
                                              (self.powerup_icon_size, self.powerup_icon_size)),
-            "triplefire": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+            "triplefire": pygame.transform.scale(pygame.image.load("assets/TripleGun.png").subsurface((0, 0, 64, 64)), 
                                                (self.powerup_icon_size, self.powerup_icon_size)),
-            "rapidfire": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+            "rapidfire": pygame.transform.scale(pygame.image.load("assets/AttackSpeed.png").subsurface((0, 0, 64, 64)), 
                                               (self.powerup_icon_size, self.powerup_icon_size)),
-            "health": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+            "health": pygame.transform.scale(pygame.image.load("assets/HEALTH.png").subsurface((0, 0, 64, 64)), 
                                            (self.powerup_icon_size, self.powerup_icon_size)),
-            "shield": pygame.transform.scale(pygame.image.load("assets/PowerUp1.png").subsurface((0, 0, 64, 64)), 
+            "shield": pygame.transform.scale(pygame.image.load("assets/Shield.png").subsurface((0, 0, 64, 64)), 
                                            (self.powerup_icon_size, self.powerup_icon_size))
         }
         # Shield properties
@@ -52,13 +52,13 @@ class Player:
         # Set ship-specific attributes based on ship_type
         if ship_type == 1:  # Falcon
             self.speed = PLAYER_SPEED  # Normal speed
-            self.lives = 10
-            self.max_lives = 10
+            self.lives = 12
+            self.max_lives = 12
             self.bullet_power = 2
         elif ship_type == 2:  # Destroyer
             self.speed = PLAYER_SPEED - 3  # Slower
-            self.lives = 14  # More health
-            self.max_lives = 14
+            self.lives = 18  # More health
+            self.max_lives = 18
             self.bullet_power = 3  # Stronger bullets
         elif ship_type == 3:  # Phantom
             self.speed = PLAYER_SPEED + 4  # Faster
@@ -531,7 +531,7 @@ class Boss1:
         health_bar_y = self.rect.y - 15  # Position above the boss
         
         # Draw background (empty health)
-        pygame.draw.rect(WIN, (169, 169, 169), (health_bar_x, health_bar_y, health_bar_width, health_bar_height))
+        pygame.draw.rect(WIN, (169, 169, 169), (health_bar_x, health_bar_y, health_bar_width, health_bar_height), border_radius=7)
         
         # Draw filled portion based on current health
         health_percentage = self.health / self.max_health  # Assuming max health is 100
@@ -545,7 +545,7 @@ class Boss1:
         else:
             health_color = (255, 0, 0)  # Red
             
-        pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height))
+        pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height), border_radius=7)
 
 class BossBullet1:
     def __init__(self, x, y, direction, pattern="straight"):
