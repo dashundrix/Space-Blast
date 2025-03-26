@@ -304,7 +304,7 @@ def main():
             new_boss_bullets = boss.shoot(current_time)
             if new_boss_bullets:
                 boss_bullets.extend(new_boss_bullets)
-                shoot_sound_enemy.play()  # Play sound effect
+                shoot_sound_boss.play()  # Play sound effect
             
             for bullet in bullets[:]:
                 if boss.rect.colliderect(bullet.rect):
@@ -333,7 +333,7 @@ def main():
                         boss = None
                         boss1_spawned = False
                         boss1_defeated = True
-                        score += 100  # Bonus points for defeating boss
+                        score += 300  # Bonus points for defeating boss
                         break
            
             # Check collision with dual bullets
@@ -411,7 +411,7 @@ def main():
                 run = False
 
             # Replace the current game over handling in main():
-            if not game_paused and not player.is_alive():
+        if not game_paused and not player.is_alive():
                 pygame.mixer.music.stop()
                 gameover.play()
 
@@ -751,8 +751,8 @@ def main():
                     print(f"New BULLET_INTERVAL: {settings.BULLET_INTERVAL}")
                 elif random_effect == 4:
                   player.lives += 2
-                  if player.lives > 10:
-                      player.lives = 10
+                  if player.lives > player.max_lives:
+                      player.lives = player.max_lives
                 print("HEALTH +")
                    
                 dualfire_end_time = current_time + POWERUP1_DURATION  # Set duration

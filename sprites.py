@@ -33,12 +33,12 @@ class Player:
             self.max_lives = 10
             self.bullet_power = 2
         elif ship_type == 2:  # Destroyer
-            self.speed = PLAYER_SPEED - 2  # Slower
-            self.lives = 1000  # More health
-            self.max_lives = 12
-            self.bullet_power = 1  # Stronger bullets
+            self.speed = PLAYER_SPEED - 3  # Slower
+            self.lives = 14  # More health
+            self.max_lives = 14
+            self.bullet_power = 3  # Stronger bullets
         elif ship_type == 3:  # Phantom
-            self.speed = PLAYER_SPEED + 2  # Faster
+            self.speed = PLAYER_SPEED + 4  # Faster
             self.lives = 8  # Less health
             self.max_lives = 8
             self.bullet_power = 1.5  # Medium bullet power
@@ -165,7 +165,7 @@ class Player:
             #WIN.blit(powerup_text, (self.powerup_bar_x + 10, self.powerup_bar_y - 15))
 
     def lose_life(self):
-        self.lives -= 0.5
+        self.lives -= 0.4
 
     def is_alive(self):
         return self.lives > 0
@@ -309,12 +309,12 @@ class Boss1:
         self.max_health = 500
         self.movement_pattern = 0
         self.shoot_timer = 0
-        self.shoot_delay = 3000
+        self.shoot_delay = 5000
         self.phase = 1
 
     def move(self):
         # Phase 1: Side to side movement
-        if self.rect.y < 90:  # Move down until it reaches y = 100
+        if self.rect.y < 30:  # Move down until it reaches y = 100
             self.rect.y += 2
         
         if self.phase == 1:
@@ -332,17 +332,32 @@ class Boss1:
                 if self.rect.x < 0:
                     self.movement_pattern = 0
 
-        # Phase 2: Diagonal movement (activates at 50% health)
+        # Phase 2: Triangular movement (activates at 50% health)
         elif self.phase == 2:
             if self.movement_pattern == 0:
+                # Move diagonally down-right
                 self.rect.x += 4
                 self.rect.y += 2
-                if self.rect.x > WIDTH - BOSS_WIDTH or self.rect.y > HEIGHT//2:
+                
+                # Check if reached bottom-right corner of pattern
+                if self.rect.x > WIDTH - BOSS_WIDTH - 50 or self.rect.y > HEIGHT//2:
                     self.movement_pattern = 1
-            else:
+                    
+            elif self.movement_pattern == 1:
+                # Move horizontally left (forming the bottom of the triangle)
                 self.rect.x -= 4
+                
+                # Check if reached bottom-left corner of pattern
+                if self.rect.x < 50:
+                    self.movement_pattern = 2
+                    
+            elif self.movement_pattern == 2:
+                # Move diagonally up-right (back to starting position)
+                self.rect.x += 4
                 self.rect.y -= 2
-                if self.rect.x < 0 or self.rect.y < 0:
+                
+                # Check if reached top corner of pattern (starting position)
+                if self.rect.y < 90 or self.rect.x > WIDTH - BOSS_WIDTH - 50:
                     self.movement_pattern = 0
 
         # Update animation
@@ -435,7 +450,7 @@ class Boss1:
             self.shoot_delay = 2000  # Faster shooting in phase 2
         elif self.health <= self.max_health * 0.25 and self.phase == 2:
             self.phase = 3
-            self.shoot_delay = 1500  # Slower but more bullets in phase 3
+            self.shoot_delay = 2300  # Slower but more bullets in phase 3
 
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))

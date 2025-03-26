@@ -37,6 +37,7 @@ def menu_game_music():
 pygame.mixer.init()
 shoot_sound_player = pygame.mixer.Sound("assets/shoot_player.wav")  # Ensure this path is correct
 shoot_sound_enemy = pygame.mixer.Sound("assets/shoot_enemy.wav")  # Ensure this path is correct
+shoot_sound_boss = pygame.mixer.Sound("assets/BossBulletSound.mp3")  # Ensure this path is correct
 
 gameover= pygame.mixer.Sound("assets/GAME OVER.mp3")  # Ensure this path is correct
 
@@ -280,7 +281,7 @@ for i in range(BOSS1_FRAME_COUNT):
 BOSS1_BULLET1_IMAGE_SHEET = pygame.image.load("assets/boss bullet.png")
 BOSS1_BULLET_WIDTH, BOSS1_BULLET_HEIGHT = 50,60
 BOSS1_BULLET1_FRAME_COUNT = 6
-BOSS_BULLET_SPEED = 7
+BOSS_BULLET_SPEED = 5
 
 BOSS1_BULLET1_FRAME_WIDTH = BOSS1_BULLET1_IMAGE_SHEET.get_width() // BOSS1_BULLET1_FRAME_COUNT
 BOSS1_BULLET1_FRAME_HEIGHT = BOSS1_BULLET1_IMAGE_SHEET.get_height()

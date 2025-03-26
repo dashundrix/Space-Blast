@@ -119,7 +119,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
             "frames": PLAYER_FRAMES,  
             "stats": {
                 "Speed": 3,  # Out of 5 stars
-                "Power": 2,
+                "Power": 3,
                 "Health": 4
             },
             "description": "Balanced fighter with good maneuverability"
@@ -140,8 +140,8 @@ def display_character_selection(WIN, bg_y, cursor_img):
             "name": "Phantom",
             "frames": PLAYER_FRAMES3, 
             "stats": {
-                "Speed": 4,
-                "Power": 3,
+                "Speed": 5,
+                "Power": 2,
                 "Health": 2
             },
             "description": "Fast scout ship with rapid-fire weapons"
