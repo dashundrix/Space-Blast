@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 from settings import *
 from main import *
 
@@ -17,7 +18,7 @@ class Player:
         elif ship_type == 2:  # Destroyer
             self.frames = PLAYER_FRAMES2
         else:  # Phantom or default
-            self.frames = PLAYER_FRAMES
+            self.frames = PLAYER_FRAMES3
         
         self.direction = "idle"
         self.frame_index = 0
@@ -29,20 +30,40 @@ class Player:
         if ship_type == 1:  # Falcon
             self.speed = PLAYER_SPEED  # Normal speed
             self.lives = 10
-            self.bullet_power = 1
+            self.max_lives = 10
+            self.bullet_power = 2
         elif ship_type == 2:  # Destroyer
             self.speed = PLAYER_SPEED - 2  # Slower
-            self.lives = 12  # More health
-            self.bullet_power = 2  # Stronger bullets
+            self.lives = 1000  # More health
+            self.max_lives = 12
+            self.bullet_power = 1  # Stronger bullets
         elif ship_type == 3:  # Phantom
             self.speed = PLAYER_SPEED + 2  # Faster
             self.lives = 8  # Less health
+            self.max_lives = 8
             self.bullet_power = 1.5  # Medium bullet power
         else:
             # Default values
             self.speed = PLAYER_SPEED
             self.lives = 10
+            self.max_lives = 10
             self.bullet_power = 1
+            
+        # Power-up attributes
+        self.powerup_active = False
+        self.powerup_type = None
+        self.powerup_end_time = 0
+        
+        # Health and powerup bar attributes
+        self.health_bar_width = 300
+        self.health_bar_height = 30
+        self.health_bar_x = 30
+        self.health_bar_y = HEIGHT - 100
+        
+        self.powerup_bar_width = 270
+        self.powerup_bar_height = 10
+        self.powerup_bar_x = 30
+        self.powerup_bar_y = HEIGHT - 60
     
     # Update the move method to use the ship-specific speed
     def move(self, keys):
@@ -96,14 +117,75 @@ class Player:
         # Update current frame with bounds check
         self.frame_index = min(self.frame_index, len(self.frames[self.direction]) - 1)
         self.image = self.frames[self.direction][self.frame_index]
+        
     def draw(self, WIN):
+        # Draw the player ship
         WIN.blit(self.image, (self.rect.x, self.rect.y))
+        
+        # Draw health bar background
+        pygame.draw.rect(WIN, (169, 169, 169), (self.health_bar_x, self.health_bar_y, 
+                                               self.health_bar_width, self.health_bar_height), border_radius=7)
+        
+        # Calculate health percentage and current width
+        health_percentage = self.lives / self.max_lives
+        current_health_width = health_percentage * self.health_bar_width
+        
+        # Determine health bar color based on percentage
+        health_color = (0, 255, 0) if health_percentage > 0.3 else (255, 0, 0)
+        
+        # Draw the filled portion of the health bar
+        pygame.draw.rect(WIN, health_color, (self.health_bar_x, self.health_bar_y, 
+                                            current_health_width, self.health_bar_height), border_radius=7)
+        
+        # Add health text
+        health_text = pygame.font.SysFont('Arial', 18).render(f"HP: {int(self.lives)}/{self.max_lives}", 
+                                                             True, (255, 255, 255))
+        WIN.blit(health_text, (self.health_bar_x + 10, self.health_bar_y + 5))
+        
+        # Draw powerup duration bar if a powerup is active
+        current_time = pygame.time.get_ticks()
+        if self.powerup_active and current_time < self.powerup_end_time:
+            # Calculate remaining time percentage
+            total_duration = self.powerup_end_time - self.powerup_start_time
+            remaining_time = self.powerup_end_time - current_time
+            time_percentage = remaining_time / total_duration
+            
+            # Draw powerup bar background
+            pygame.draw.rect(WIN, (50, 50, 150), (self.powerup_bar_x, self.powerup_bar_y, 
+                                                 self.powerup_bar_width, self.powerup_bar_height), border_radius=7)
+            
+            # Draw remaining time
+            current_powerup_width = time_percentage * self.powerup_bar_width
+            pygame.draw.rect(WIN, (0, 100, 255), (self.powerup_bar_x, self.powerup_bar_y, 
+                                                 current_powerup_width, self.powerup_bar_height), border_radius=7)
+            
+            # Add powerup text
+            #powerup_text = pygame.font.SysFont('Arial', 14).render(f"Power Up: {int(remaining_time/1000)}s", 
+                                                                 #True, (255, 255, 255))
+            #WIN.blit(powerup_text, (self.powerup_bar_x + 10, self.powerup_bar_y - 15))
 
     def lose_life(self):
         self.lives -= 0.5
 
     def is_alive(self):
         return self.lives > 0
+        
+    def activate_powerup(self, powerup_type, duration=POWERUP1_DURATION):
+        """Activate a powerup for the specified duration"""
+        self.powerup_active = True
+        self.powerup_type = powerup_type
+        self.powerup_start_time = pygame.time.get_ticks()
+        self.powerup_end_time = self.powerup_start_time + duration
+        
+    def update_powerups(self):
+        """Check if powerups have expired"""
+        current_time = pygame.time.get_ticks()
+        if self.powerup_active and current_time >= self.powerup_end_time:
+            self.powerup_active = False
+            self.powerup_type = None
+            return False  # Powerup expired
+        return self.powerup_active  # Return if powerup is still active
+
     
 # Bullet Classes Player
 class Bullet:
@@ -227,7 +309,7 @@ class Boss1:
         self.max_health = 500
         self.movement_pattern = 0
         self.shoot_timer = 0
-        self.shoot_delay = 1000
+        self.shoot_delay = 3000
         self.phase = 1
 
     def move(self):
@@ -273,23 +355,87 @@ class Boss1:
     def shoot(self, current_time):
         bullets = []
         if current_time - self.shoot_timer > self.shoot_delay:
+            # Define gun positions relative to boss center
+            gun_positions = [
+                # Center guns (2)
+                (-20, self.rect.height - 20),  # Left center gun
+                (20, self.rect.height - 20),   # Right center gun
+                
+                # Left wing guns (2)
+                (-self.rect.width//3, self.rect.height),     # Outer left gun
+                (-self.rect.width//4 + 30, self.rect.height - 30),   # Inner left gun
+                
+                # Right wing guns (2)
+                (self.rect.width//3, self.rect.height),      # Outer right gun
+                (self.rect.width//4 - 30, self.rect.height - 30)     # Inner right gun
+            ]
+            
             if self.phase == 1:
-                # Single spread shot
-                bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, -1))
-                bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, 0))
-                bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, 1))
+                # Phase 1: Alternating patterns
+                pattern_cycle = (current_time // 5000) % 5  # Change pattern every 3 seconds
+                
+                if pattern_cycle == 0:
+                    # Straight shots
+                    for x_offset, y_offset in gun_positions:
+                        bullets.append(BossBullet1(
+                            self.rect.centerx + x_offset, 
+                            self.rect.y + y_offset, 
+                            0,  # Straight down
+                            "straight"
+                        ))
+                elif pattern_cycle == 1:
+                    # Sine wave shots
+                    for x_offset, y_offset in gun_positions:
+                        bullets.append(BossBullet1(
+                            self.rect.centerx + x_offset, 
+                            self.rect.y + y_offset, 
+                            0,
+                            "sine"
+                        ))
+                else:
+                    # Spiral shots from center guns only
+                    for x_offset, y_offset in gun_positions[:2]:  # Center guns
+                        bullets.append(BossBullet1(
+                            self.rect.centerx + x_offset, 
+                            self.rect.y + y_offset, 
+                            0,
+                            "spiral"
+                        ))
+            
             elif self.phase == 2:
-                # Circle pattern
-                for angle in range(0, 360, 45):
-                    bullets.append(BossBullet1(self.rect.centerx, self.rect.bottom, angle))
+                # Phase 2: More complex patterns
+                # Center guns fire spiral patterns
+                for x_offset, y_offset in gun_positions[:2]:  # Center guns
+                    bullets.append(BossBullet1(
+                        self.rect.centerx + x_offset, 
+                        self.rect.y + y_offset, 
+                        0,
+                        "spiral"
+                    ))
+                
+                # Wing guns fire sine wave patterns
+                for x_offset, y_offset in gun_positions[2:]:  # Wing guns
+                    # Left side
+                    bullets.append(BossBullet1(
+                        self.rect.centerx + x_offset, 
+                        self.rect.y + y_offset, 
+                        -30 if x_offset < 0 else 30,  # Angle based on which side
+                        "sine"
+                    ))
+            
             self.shoot_timer = current_time
+        
         return bullets
+
 
     def take_damage(self, damage):
         self.health -= damage
-        if self.health <= 50 and self.phase == 1:
+        if self.health <= self.max_health * 0.5 and self.phase == 1:
             self.phase = 2
-            self.shoot_delay = 800  # Faster shooting in phase 2
+            self.shoot_delay = 2000  # Faster shooting in phase 2
+        elif self.health <= self.max_health * 0.25 and self.phase == 2:
+            self.phase = 3
+            self.shoot_delay = 1500  # Slower but more bullets in phase 3
 
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))
@@ -317,6 +463,71 @@ class Boss1:
             
         pygame.draw.rect(WIN, health_color, (health_bar_x, health_bar_y, current_health_width, health_bar_height))
 
+class BossBullet1:
+    def __init__(self, x, y, direction, pattern="straight"):
+        self.rect = pygame.Rect(x - BOSS1_BULLET_WIDTH // 2, y, BOSS1_BULLET_WIDTH, BOSS1_BULLET_HEIGHT)
+        self.frames = BOSS1_BULLET1_FRAMES
+        self.frame_index = 0
+        self.animation_speed = 5
+        self.frame_counter = 0
+        self.image = self.frames[self.frame_index]
+        self.direction = direction  # Angle in degrees or simple direction (-1, 0, 1)
+        self.pattern = pattern  # Movement pattern: "straight", "sine", "spiral", "homing"
+        self.speed = BOSS_BULLET_SPEED
+        self.age = 0  # Track how long the bullet has existed
+        self.origin_x = x  # Remember starting position for patterns
+        self.origin_y = y
+        self.amplitude = 50  # For sine wave pattern
+        self.frequency = 0.05  # For sine wave pattern
+        self.spiral_radius = 1.5  # Starting radius for spiral pattern
+        self.spiral_growth = 0.3  # How much the radius grows per frame
+        
+    def move(self):
+        self.age += 1
+        
+        if self.pattern == "straight":
+            # Simple straight movement based on angle
+            if self.direction in [-2, -1, 0, 1, 2]:
+                # Simple directional movement
+                self.rect.x += self.direction * (self.speed // 2)
+                self.rect.y += self.speed
+            else:
+                # Angular movement
+                angle_rad = math.radians(self.direction)
+                self.rect.x += math.cos(angle_rad) * self.speed
+                self.rect.y += math.sin(angle_rad) * self.speed
+                
+        elif self.pattern == "sine":
+            # Sine wave pattern
+            # Move downward while oscillating horizontally
+            self.rect.y += self.speed
+            # Calculate horizontal position based on sine wave
+            self.rect.x = self.origin_x + math.sin(self.age * self.frequency) * self.amplitude
+            
+        elif self.pattern == "spiral":
+            # Spiral outward pattern
+            angle_rad = math.radians(self.age * 10)  # Rotate 10 degrees per frame
+            radius = self.spiral_radius + (self.age * self.spiral_growth)
+            
+            # Calculate new position based on spiral
+            self.rect.x = self.origin_x + math.cos(angle_rad) * radius
+            self.rect.y = self.origin_y + math.sin(angle_rad) * radius
+            
+        elif self.pattern == "homing":
+            # This would require player position, so we'll implement a simpler version
+            # that just accelerates downward
+            self.rect.y += self.speed * (1 + self.age * 0.01)
+        
+        # Update animation
+        self.frame_counter += 1
+        if self.frame_counter >= self.animation_speed:
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+            self.frame_counter = 0
+            
+        self.image = self.frames[self.frame_index]
+        
+    def draw(self, WIN):
+        WIN.blit(self.image, (self.rect.x, self.rect.y))
 
 # Asteroid Class
 class Asteroid:
@@ -367,27 +578,7 @@ class EnemyBullet:
     def draw(self, WIN):
         WIN.blit(self.image, (self.rect.x, self.rect.y))
 
-class BossBullet1:
-    def __init__(self, x, y, angle):
-        self.rect = pygame.Rect(x, y, BULLET_WIDTH, BULLET_HEIGHT)
-        self.frames = BOSS1_BULLET1_FRAMES
-        self.frame_index = 0
-        self.animation_speed = 1
-        self.frame_counter = 0
-        self.image = self.frames[self.frame_index]
-        self.angle = angle
-    
-    def move(self):
-        self.rect.y += BOSS_BULLET_SPEED
-        self.frame_counter += 1
-        if self.frame_counter >= self.animation_speed:
-            self.frame_index = (self.frame_index + 1) % len(self.frames)
-            self.frame_counter = 0
 
-        self.image = self.frames[self.frame_index]
-    
-    def draw(self, WIN):
-        WIN.blit(self.image, (self.rect.x, self.rect.y))
 
 
 

@@ -1,4 +1,5 @@
 from settings import *
+import settings
 import sys
 import os
 
@@ -83,36 +84,71 @@ def display_title_screen(WIN, BG, bg_y, cursor_img):
 
 def display_character_selection(WIN, bg_y, cursor_img):
     """Display character selection screen with different animated ship options"""
-    # Set up fonts
+
     title_font = pygame.font.SysFont('Arial', 48)
     button_font = pygame.font.SysFont('Arial', 24)
     
-    # Create ship selection frames - using your existing animation system
+    # Load star sprite sheet
+    star_sheet = pygame.image.load("assets/Star.png")  # Load your sprite sheet
+    
+    # Extract frames from the sprite sheet
+    star_frames = []
+    frame_width = star_sheet.get_width() // 7  # Assuming 7 frames horizontally
+    frame_height = star_sheet.get_height()
+    
+    for i in range(7):
+        # Extract each frame from the sheet
+        frame = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA)
+        frame.blit(star_sheet, (0, 0), (i * frame_width, 0, frame_width, frame_height))
+        frame = pygame.transform.scale(frame, (20, 20))  # Adjust size as needed
+        star_frames.append(frame)
+    
+    # Load empty star image
+    empty_star_img = pygame.image.load("assets/Empty Star.png")  # Create this image
+    empty_star_img = pygame.transform.scale(empty_star_img, (20, 20))
+    
+    # Star animation variables
+    star_animation_speed = 8  # Adjust for faster/slower animation
+    star_frame_counter = 0
+    star_frame_index = 0
+    
     ship_types = [
         {
             "id": 1,
             "name": "Falcon",
-            "frames": PLAYER_FRAMES,  # Use your existing animation frames
-            "stats": "Speed: [ I I I . . ]\nPower: [ I I . . . ]\nHealth: [ I I I I . ]",
+            "frames": PLAYER_FRAMES,  
+            "stats": {
+                "Speed": 3,  # Out of 5 stars
+                "Power": 2,
+                "Health": 4
+            },
             "description": "Balanced fighter with good maneuverability"
         },
         {
             "id": 2,
             "name": "Destroyer",
-            "frames": PLAYER_FRAMES2,  # For now using same frames, you can replace with new ones
-            "stats": "Speed: [ I I . . . ]\nPower: [ I I I I . ]\nHealth: [ I I I I I ]",
+            "frames": PLAYER_FRAMES2,  
+            "stats": {
+                "Speed": 2,
+                "Power": 4,
+                "Health": 5
+            },
             "description": "Heavy fighter with powerful weapons"
         },
         {
             "id": 3,
             "name": "Phantom",
-            "frames": PLAYER_FRAMES,  # For now using same frames, you can replace with new ones
-            "stats": "Speed: [ I I I I . ]\nPower: [ I I I . . ]\nHealth: [ I I . . . ]",
+            "frames": PLAYER_FRAMES3, 
+            "stats": {
+                "Speed": 4,
+                "Power": 3,
+                "Health": 2
+            },
             "description": "Fast scout ship with rapid-fire weapons"
         }
     ]
     
-    # Animation variables
+    # Ship animation variables
     animation_speed = 4
     frame_counters = [0, 0, 0]
     frame_indices = [0, 0, 0]
@@ -122,9 +158,9 @@ def display_character_selection(WIN, bg_y, cursor_img):
     start_x = WIDTH // 2 - (ship_spacing * 3) // 2 + ship_spacing // 2 - 60
     
     ship_rects = [
-        pygame.Rect(start_x, HEIGHT // 2 - 100, PLAYER_WIDTH, PLAYER_HEIGHT),
-        pygame.Rect(start_x + ship_spacing, HEIGHT // 2 - 100, PLAYER_WIDTH, PLAYER_HEIGHT),
-        pygame.Rect(start_x + ship_spacing * 2, HEIGHT // 2 - 100, PLAYER_WIDTH, PLAYER_HEIGHT)
+        pygame.Rect(start_x, HEIGHT // 2 - 110, PLAYER_WIDTH, PLAYER_HEIGHT),
+        pygame.Rect(start_x + ship_spacing, HEIGHT // 2 - 110, PLAYER_WIDTH, PLAYER_HEIGHT),
+        pygame.Rect(start_x + ship_spacing * 2, HEIGHT // 2 - 110, PLAYER_WIDTH, PLAYER_HEIGHT)
     ]
     
     # Create back button
@@ -171,6 +207,12 @@ def display_character_selection(WIN, bg_y, cursor_img):
         if bg_y >= HEIGHT:
             bg_y = 0
             
+        # Update star animation
+        star_frame_counter += 1
+        if star_frame_counter >= star_animation_speed:
+            star_frame_index = (star_frame_index + 1) % len(star_frames)
+            star_frame_counter = 0
+            
         # Draw everything
         WIN.fill((0, 0, 0))
         WIN.blit(BG, (0, bg_y))
@@ -182,7 +224,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
         
         # Draw ships with animations
         for i, ship in enumerate(ship_types):
-            # Update animation
+            # Update ship animation
             frame_counters[i] += 1
             if frame_counters[i] >= animation_speed:
                 frame_indices[i] = (frame_indices[i] + 1) % len(ship["frames"]["idle"])
@@ -190,7 +232,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
             
             # Draw selection highlight
             if ship["id"] == selected_ship:
-                highlight_rect = ship_rects[i].inflate(40, 40)
+                highlight_rect = ship_rects[i].inflate(30, 30)
                 pygame.draw.rect(WIN, (0, 255, 0), highlight_rect, 3, border_radius=10)
             
             # Draw ship animation frame
@@ -202,17 +244,29 @@ def display_character_selection(WIN, bg_y, cursor_img):
             WIN.blit(name_text, (ship_rects[i].centerx - name_text.get_width() // 2, 
                                 ship_rects[i].bottom + 10))
             
-            # Draw ship stats
-            stats_lines = ship["stats"].split('\n')
-            for j, line in enumerate(stats_lines):
-                stat_text = pygame.font.SysFont('Arial', 18).render(line, True, (200, 200, 200))
-                WIN.blit(stat_text, (ship_rects[i].centerx - stat_text.get_width() // 2, 
-                                    ship_rects[i].bottom + 40 + j * 20))
+            # Draw ship stats with animated stars
+            stat_y_offset = ship_rects[i].bottom + 40
+            for j, (stat_name, stat_value) in enumerate(ship["stats"].items()):
+                # Draw stat name
+                stat_text = pygame.font.SysFont('Arial', 18).render(f"{stat_name}:", True, (200, 200, 200))
+                WIN.blit(stat_text, (ship_rects[i].centerx - 80, stat_y_offset + j * 30))
+                
+                # Draw stars for this stat
+                for k in range(5):  # 5 stars total
+                    star_x = ship_rects[i].centerx - 10 + k * 25  # Adjust spacing between stars
+                    star_y = stat_y_offset + j * 30
+                    
+                    # Draw filled or empty star based on stat value
+                    if k < stat_value:
+                        # Use the current animation frame for filled stars
+                        WIN.blit(star_frames[star_frame_index], (star_x, star_y))
+                    else:
+                        WIN.blit(empty_star_img, (star_x, star_y))
             
             # Draw ship description
             desc_text = pygame.font.SysFont('Arial', 16).render(ship["description"], True, (180, 180, 180))
             WIN.blit(desc_text, (ship_rects[i].centerx - desc_text.get_width() // 2, 
-                                ship_rects[i].bottom + 90))
+                                ship_rects[i].bottom + 130))
         
         # Draw back button
         pygame.draw.rect(WIN, (80, 80, 80), back_button, border_radius=5)
@@ -234,6 +288,7 @@ def display_character_selection(WIN, bg_y, cursor_img):
         pygame.display.update()
     
     return selected_ship
+
 
 
 
@@ -457,7 +512,7 @@ def display_leaderboard(WIN, bg_y, cursor_img):
 
 # Function to display the pause screen with transparency
 def display_pause_screen(WIN):
-    gameover.play()
+
     BUTTON_WIDTH = 230
     BUTTON_HEIGHT = 50
    

@@ -11,7 +11,7 @@ pygame.display.set_caption("Space Shooters")
 cursor_img = pygame.image.load('assets/MOUSE_POINTER.png')
 cursor_img = pygame.transform.scale(cursor_img, (64, 64))
 
-BG = pygame.transform.scale(pygame.image.load("assets/Space Background.png"), (WIDTH, HEIGHT))
+BG = pygame.transform.scale(pygame.image.load("assets/BG.jpg"), (WIDTH, HEIGHT))
 BG1 = pygame.transform.scale(pygame.image.load("assets/Space Background1.png"), (WIDTH, HEIGHT))
 BG2 = pygame.transform.scale(pygame.image.load("assets/Space Background2.jpg"), (WIDTH, HEIGHT))
 
@@ -23,6 +23,11 @@ bg_y = 0  # This will track the y position of the background
 #BG/MENU SOUNDS
 def play_game_music():
     pygame.mixer.music.load('assets/normal bgm.mp3')  # Replace with your game music file
+    pygame.mixer.music.set_volume(0.1)  # Set the volume (optional)
+    pygame.mixer.music.play(-1)  # Play the music in a loop
+
+def menu_game_music():
+    pygame.mixer.music.load('assets/Menu_Sound.mp3')  # Replace with your game music file
     pygame.mixer.music.set_volume(0.5)  # Set the volume (optional)
     pygame.mixer.music.play(-1)  # Play the music in a loop
 
@@ -32,7 +37,7 @@ def play_game_music():
 pygame.mixer.init()
 shoot_sound_player = pygame.mixer.Sound("assets/shoot_player.wav")  # Ensure this path is correct
 shoot_sound_enemy = pygame.mixer.Sound("assets/shoot_enemy.wav")  # Ensure this path is correct
-normal_bg = pygame.mixer.Sound("assets/normal bgm.mp3")  # Ensure this path is correct
+
 gameover= pygame.mixer.Sound("assets/GAME OVER.mp3")  # Ensure this path is correct
 
 
@@ -66,6 +71,18 @@ PLAYER_SPRITE_SHEETS2 = {
     "down-right": "assets/Spaceship2 RIGHT.png",  
 }
 
+PLAYER_SPRITE_SHEETS3 = {
+    "idle": "assets/SPACESHIP 3.png",
+    "up": "assets/SPACESHIP 3 FORWARD.png",
+    "right": "assets/SPACESHIP 3 RIGHT.png",
+    "left": "assets/SPACESHIP 3 LEFT.png",
+    "down": "assets/SPACESHIP 3.png",
+    "up-left": "assets/SPACESHIP 3 LEFT.png",  
+    "up-right": "assets/SPACESHIP 3 RIGHT.png",  
+    "down-left": "assets/SPACESHIP 3 LEFT.png",  
+    "down-right": "assets/SPACESHIP 3 RIGHT.png",  
+}
+
 PLAYERBULLET1_IMAGE_SHEET = pygame.image.load("assets/Bullet 1.png")
 PLAYERBULLET2_IMAGE_SHEET = pygame.image.load("assets/Dual_Bullet.png")
 
@@ -94,6 +111,18 @@ PLAYER_FRAME_COUNT2 = {
     "down-right": 6,
 }
 
+PLAYER_FRAME_COUNT3 = {
+    "idle": 15,
+    "up": 7,
+    "right": 14,
+    "left": 14,
+    "down": 15,
+    "up-left": 14, 
+    "up-right": 14,
+    "down-left": 14,
+    "down-right": 14,
+}
+
 PLAYER_FRAMES = {}
 for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS.items():
     sprite_sheet = pygame.image.load(sprite_sheet_path)
@@ -119,6 +148,22 @@ for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS2.items():
 
     # Extract and scale frames
     PLAYER_FRAMES2[direction] = [
+        pygame.transform.scale(
+            sprite_sheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height)),
+            (PLAYER_WIDTH, PLAYER_HEIGHT),
+        )
+        for i in range(frame_count)
+    ]
+
+PLAYER_FRAMES3 = {}
+for direction, sprite_sheet_path in PLAYER_SPRITE_SHEETS3.items():
+    sprite_sheet = pygame.image.load(sprite_sheet_path)
+    frame_count = PLAYER_FRAME_COUNT3[direction]
+    frame_width = sprite_sheet.get_width() // frame_count
+    frame_height = sprite_sheet.get_height()
+
+    # Extract and scale frames
+    PLAYER_FRAMES3[direction] = [
         pygame.transform.scale(
             sprite_sheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height)),
             (PLAYER_WIDTH, PLAYER_HEIGHT),
@@ -232,10 +277,10 @@ for i in range(BOSS1_FRAME_COUNT):
     frame = pygame.transform.scale(frame, (BOSS_WIDTH, BOSS_HEIGHT))
     BOSS1_FRAMES.append(frame)
 
-BOSS1_BULLET1_IMAGE_SHEET = pygame.image.load("assets/Enemy Bullet 1.png")
+BOSS1_BULLET1_IMAGE_SHEET = pygame.image.load("assets/boss bullet.png")
 BOSS1_BULLET_WIDTH, BOSS1_BULLET_HEIGHT = 50,60
-BOSS1_BULLET1_FRAME_COUNT = 4
-BOSS_BULLET_SPEED = 10
+BOSS1_BULLET1_FRAME_COUNT = 6
+BOSS_BULLET_SPEED = 7
 
 BOSS1_BULLET1_FRAME_WIDTH = BOSS1_BULLET1_IMAGE_SHEET.get_width() // BOSS1_BULLET1_FRAME_COUNT
 BOSS1_BULLET1_FRAME_HEIGHT = BOSS1_BULLET1_IMAGE_SHEET.get_height()
