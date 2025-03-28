@@ -87,7 +87,38 @@ class Player:
         self.powerup_bar_height = 10
         self.powerup_bar_x = 30
         self.powerup_bar_y = HEIGHT - 60
-    
+
+        # Add stat frame animation from sprite sheet
+        self.stat_frame_sheet = pygame.image.load("assets/Stat Frame.png").convert_alpha()  # Load sprite sheet
+        self.stat_frame_frames = []
+        
+        # Assuming the sprite sheet has 6 frames in a row
+        frame_width = self.stat_frame_sheet.get_width() // 6  # Divide sheet width by number of frames
+        frame_height = self.stat_frame_sheet.get_height()
+        
+        # Extract each frame from the sprite sheet
+        for i in range(6):
+            frame_rect = pygame.Rect(i * frame_width, 0, frame_width, frame_height)
+            frame = self.stat_frame_sheet.subsurface(frame_rect)
+            # Scale the frame to fit behind your UI elements
+            frame = pygame.transform.scale(frame, (350, 190))  # Adjust size as needed
+            
+            # Make the frame semi-transparent
+            # Create a copy with per-pixel alpha
+            frame_alpha = pygame.Surface(frame.get_size(), pygame.SRCALPHA)
+            frame_alpha.fill((255, 255, 255, 128))  # Alpha value 128 (50% transparent)
+            frame.blit(frame_alpha, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            
+            self.stat_frame_frames.append(frame)
+
+        self.stat_frame_index = 0
+        self.stat_frame_animation_speed = 12  # Adjust speed as needed
+        self.stat_frame_counter = 0
+        self.stat_frame_image = self.stat_frame_frames[self.stat_frame_index]
+        
+        # Position for the stat frame
+        self.stat_frame_x = 3
+        self.stat_frame_y = HEIGHT - 190  # Position it to cover health bar and powerup area
     # Update the move method to use the ship-specific speed
     def move(self, keys):
         moving = False
@@ -141,6 +172,12 @@ class Player:
         self.frame_index = min(self.frame_index, len(self.frames[self.direction]) - 1)
         self.image = self.frames[self.direction][self.frame_index]
 
+        self.stat_frame_counter += 1
+        if self.stat_frame_counter >= self.stat_frame_animation_speed:
+            self.stat_frame_index = (self.stat_frame_index + 1) % len(self.stat_frame_frames)
+            self.stat_frame_counter = 0
+            self.stat_frame_image = self.stat_frame_frames[self.stat_frame_index]
+
     def activate_powerup(self, powerup_type, duration):
         """Activate a power-up for the specified duration"""
         current_time = pygame.time.get_ticks()
@@ -172,20 +209,18 @@ class Player:
 
     def is_alive(self):
         return self.lives > 0
-        
+
     def draw(self, WIN):
-        # Draw the player ship
-        WIN.blit(self.image, (self.rect.x, self.rect.y))
+
+        # Create a temporary surface with the stat frame
+        temp_surface = pygame.Surface((350, 200), pygame.SRCALPHA)
+        temp_surface.blit(self.stat_frame_image, (0, 0))
+        # Apply transparency
+        temp_surface.set_alpha(128)  # 50% transparent
+        # Draw the semi-transparent stat frame
+        WIN.blit(temp_surface, (self.stat_frame_x, self.stat_frame_y))
         
-        # Draw shield if active
-        if self.shield_active:
-            # Draw shield around player
-            shield_color = (0, 100, 255, 128)  # Blue with transparency
-            shield_radius = max(self.rect.width, self.rect.height) // 2 + 10
-            shield_surface = pygame.Surface((shield_radius*2, shield_radius*2), pygame.SRCALPHA)
-            pygame.draw.circle(shield_surface, shield_color, (shield_radius, shield_radius), shield_radius)
-            WIN.blit(shield_surface, (self.rect.centerx - shield_radius, self.rect.centery - shield_radius))
-        
+
         # Draw health bar background
         health_bar_width = 300
         health_bar_height = 30
@@ -232,7 +267,7 @@ class Player:
         # Draw power-up icons
         current_time = pygame.time.get_ticks()
         x_offset = 0
-        
+
         for powerup_type, end_time in self.active_powerups.items():
             # Calculate remaining time
             remaining_time = max(0, end_time - current_time)
@@ -254,7 +289,20 @@ class Player:
                                  self.powerup_icon_y + self.powerup_icon_size - 14))
             
             # Move to next icon position
-            x_offset += self.powerup_icon_size + self.powerup_icon_spacing
+            x_offset += self.powerup_icon_size + self.powerup_icon_spacing        # Draw the player ship
+        
+        WIN.blit(self.image, (self.rect.x, self.rect.y))
+        
+        # Draw shield if active
+        if self.shield_active:
+            # Draw shield around player
+            shield_color = (0, 100, 255, 128)  # Blue with transparency
+            shield_radius = max(self.rect.width, self.rect.height) // 2 + 10
+            shield_surface = pygame.Surface((shield_radius*2, shield_radius*2), pygame.SRCALPHA)
+            pygame.draw.circle(shield_surface, shield_color, (shield_radius, shield_radius), shield_radius)
+            WIN.blit(shield_surface, (self.rect.centerx - shield_radius, self.rect.centery - shield_radius))
+
+
     
 # Bullet Classes Player
 class Bullet:
